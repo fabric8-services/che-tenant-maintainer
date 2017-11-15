@@ -1,0 +1,6 @@
+/modules/
+/.exploded/
+/io.fabric8.tenant.che_workspace_migration-*.war
+/io.fabric8.tenant.che_workspace_migration-*-swarm.jar
+/.settings/
+/.ceylon/config~
