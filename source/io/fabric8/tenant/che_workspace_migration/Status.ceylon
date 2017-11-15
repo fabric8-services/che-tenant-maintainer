@@ -4,9 +4,6 @@ import ceylon.file {
 import ceylon.http.client {
     ClientResponse=Response
 }
-import java.lang {
-    transient
-}
 
 shared class Status {
     shared static Map<Integer, String> statuses = map({
@@ -51,6 +48,9 @@ shared class Status {
     
     shared new destinationCheServerNotAccessible extends simpleStatus(3) {}
     
+    function dumpResponse(ClientResponse response)
+            => "``response.status`` - `` response.contents ``";
+    
     shared new unexpectedErrorInSourceCheServer(ClientResponse response) extends fromCode(4) {
         details = "\n" + dumpResponse(response);
     }
@@ -79,6 +79,5 @@ shared class Status {
         if(! details.empty) ": ``details``"
     };
     
-    transient
-    shared Boolean successful => code == 0;
+    shared Boolean successful() => code == 0;
 }

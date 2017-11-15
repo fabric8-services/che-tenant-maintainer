@@ -22,7 +22,8 @@ import ceylon.http.client {
 }
 import ceylon.http.common {
     post,
-    get
+    get,
+    Header
 }
 import ceylon.logging {
     Priority,
@@ -74,6 +75,8 @@ class MigrationTool(
     shared Boolean quiet = false
     
 ) {
+    function authorization(String keycloakToken) => Header("Authorization", "Bearer ``keycloakToken``");
+
     shared Status run() {
         value endpointPath = "/wsmaster/api/workspace";
         value sourceEndpoint = sourceCheServer + endpointPath;
@@ -103,15 +106,18 @@ class MigrationTool(
             return Status.invalidJsonInWorkspaceList(responseContents);
         }
         
+        value initialState = [Status.success, []];
         value [status, createdWorkspaces] = workspaces
                 .narrow<JsonObject>()
                 .map((workspace) => workspace.get("config"))
                 .narrow<JsonObject>()
-                .fold<[Status, [String*]]>([Status.success, []])((doneUntilNow, toCreate) {
-            value [status, created] = doneUntilNow;
-            if (status != Status.success) {
-                // Skip next workspace since migration failed
-                return doneUntilNow;
+                .fold<[Status, [String*]]>(initialState)((currentState, toCreate) {
+            
+            value [status, alreadyCreated] = currentState;
+            
+            if (! status.successful()) {
+                // Skip next workspaces since migration already failed
+                return currentState;
             }
             
             value workspaceName = toCreate.getString("name");
@@ -129,20 +135,20 @@ class MigrationTool(
             switch(response.status)
             case(201) {
                 log.info(() => "    => OK");
-                return [Status.success, [workspaceName, *created]];
+                return [Status.success, [workspaceName, *alreadyCreated]];
             }
             case(403) {
-                return [Status.noRightToCreateNewWorkspace, created];
+                return [Status.noRightToCreateNewWorkspace, alreadyCreated];
             }
             case(409) {
                 if (! ignoreExisting) {
-                    return [Status.workspaceAlreadyExists(workspaceName), created];
+                    return [Status.workspaceAlreadyExists(workspaceName), alreadyCreated];
                 }
                 log.info(() => "    => workspace already exists: Ignoring");
-                return [Status.success, created];
+                return [Status.success, alreadyCreated];
             }
             else {
-                return [Status.unexpectedErrorInDestinationCheServer(response), created];
+                return [Status.unexpectedErrorInDestinationCheServer(response), alreadyCreated];
             }
         });
 
@@ -151,9 +157,10 @@ class MigrationTool(
         } else {
             log.info("No workspaces created");
         }
-        if (!status.successful) {
+        if (!status.successful()) {
             log.error(status.string);
         }
         return status;
     }
 }
+

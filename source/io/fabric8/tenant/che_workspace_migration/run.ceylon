@@ -2,15 +2,7 @@ import ceylon.file {
     Nil,
     File
 }
-import ceylon.http.client {
-    ClientResponse=Response
-}
-import ceylon.http.common {
-    Header
-}
 import ceylon.logging {
-    addLogWriter,
-    writeSimpleLog,
     defaultPriority
 }
 
@@ -20,10 +12,11 @@ import fr.minibilles.cli {
     Info
 }
 
+"Runs the `io.fabric8.tenant.che_workspace_migration` from the command line."
+suppressWarnings("expressionTypeNothing")
+shared void run() => process.exit(doMigration(*process.arguments).code);
 
-String buildHelp() => help<MigrationTool>("java -jar `` `package`.name ``.jar");
-
-"Run the module `io.fabric8.tenant.che_workspace_migration`."
+"Runs the migration from either command line or the REST endpoint"
 Status doMigration(String* arguments) {
     logSettings.reset();
     
@@ -58,22 +51,16 @@ Status doMigration(String* arguments) {
             return migrator.run();
         }
         else {
-            addLogWriter(writeSimpleLog);
             value errors = parsingResult;
             status = Status.wrongCommandLine(*errors);
             log.error(status.string);
             return status;
         }
     } catch(Exception e) {
-        addLogWriter(writeSimpleLog);
         log.error("Unexpected exception: ", e);
         return Status.unexpectedException(e);
     }
 }
 
-suppressWarnings("expressionTypeNothing")
-shared void run() => process.exit(doMigration(*process.arguments).code);
+String buildHelp() => help<MigrationTool>("java -jar `` `package`.name ``.jar");
 
-String dumpResponse(ClientResponse response) => "``response.status`` - `` response.contents ``";
-
-Header authorization(String keycloakToken) => Header("Authorization", "Bearer ``keycloakToken``");
