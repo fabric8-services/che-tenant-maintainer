@@ -17,7 +17,7 @@ suppressWarnings("expressionTypeNothing")
 shared void run() => process.exit(doMigration(*process.arguments).code);
 
 "Runs the migration from either command line or the REST endpoint"
-Status doMigration(String* arguments) {
+shared Status doMigration(String* arguments) {
     logSettings.reset();
     
     Status status;
