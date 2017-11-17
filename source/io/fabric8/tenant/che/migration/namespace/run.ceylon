@@ -10,9 +10,10 @@ String cheSingleTenantCheServerRoute="che-server";
 "Run the module `io.fabric8.tenant.che.migration.namespace`."
 suppressWarnings("expressionTypeNothing")
 shared void run() {
-    
+    print("start");
     value keycloakToken = process.environmentVariableValue(osioTokenEnvVariable);
     value destinationCheServer = process.environmentVariableValue(multiTenantCheServerVariable);
+/*
     if(! exists keycloakToken) {
         process.exit(1);
         return;
@@ -21,6 +22,7 @@ shared void run() {
         process.exit(1);
         return;
     }
+*/
     String singleTenantCheServer;
     
     try(oc = DefaultOpenShiftClient()) {
@@ -50,9 +52,9 @@ shared void run() {
     }
     
     value workspaceMigrationArguments = [
-        "--token=``keycloakToken``",
-        "--source=``singleTenantCheServer``",
-        "--destination``destinationCheServer``",
+        "--token=``keycloakToken else "null"``",
+        "--source=``singleTenantCheServer ``",
+        "--destination``destinationCheServer else "null"``",
         "--ignore-existing"
     ];
         

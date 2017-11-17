@@ -1,4 +1,3 @@
-suppressWarnings("packageName")
 native("jvm")
 module io.fabric8.tenant.che.migration.workspaces
         maven:"io.fabric8.tenant:che_workspace_migration" "1.0.0" {
