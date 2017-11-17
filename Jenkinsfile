@@ -103,6 +103,5 @@ clientsNode{
     """
 
   stage('Rollout to Stage')
-  def envStage = environmentNamespace("stage")
   kubernetesApply(file: rc, environment: envStage)
 }
