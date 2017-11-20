@@ -2,8 +2,6 @@
 @Library('github.com/kadel/fabric8-pipeline-library@remove-JOB_NAME')
 def utils = new io.fabric8.Utils()
 def s2iBuild(version){
-
-    def utils = new Utils()
     def ns = utils.namespace
     def resourceName = utils.getResourceName()
     def is = getImageStream(ns, resourceName)
@@ -13,7 +11,6 @@ def s2iBuild(version){
     kubernetesApply(file: is, environment: ns)
     kubernetesApply(file: bc, environment: ns)
     sh "oc start-build ${resourceName}-s2i --from-dir ./ --follow -n ${ns}"
-
 }
 
 def getImageStream(ns){
