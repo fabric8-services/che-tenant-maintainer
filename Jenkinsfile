@@ -2,8 +2,8 @@
 @Library('github.com/kadel/fabric8-pipeline-library@remove-JOB_NAME')
 import io.fabric8.Fabric8Commands
 
-def utils = new io.fabric8.Utils()
 def s2iBuild(version){
+    def utils = new io.fabric8.Utils()
     def ns = utils.namespace
     def resourceName = utils.getResourceName()
     def is = getImageStream(ns, resourceName)
@@ -47,6 +47,8 @@ spec:
         name: "ceylon/s2i-ceylon:1.3.3-jre8"
 """
 }
+
+def utils = new io.fabric8.Utils()
 
 clientsNode{
   def envStage = utils.environmentNamespace('stage')
