@@ -7,6 +7,7 @@ def utils = new io.fabric8.Utils()
 clientsNode{
   def envStage = utils.environmentNamespace('stage')
   def newVersion = ''
+  def resourceName = utils.getResourceName()
 
   checkout scm
   stage('Build Release')
@@ -23,7 +24,6 @@ clientsNode{
     def flow = new Fabric8Commands()
     if (flow.isOpenShift()) {
         def ns = utils.namespace
-        def resourceName = utils.getResourceName()
         def is = """
 apiVersion: v1
 kind: ImageStream
