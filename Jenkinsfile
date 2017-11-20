@@ -1,5 +1,5 @@
 #!/usr/bin/groovy
-@Library('github.com/fabric8io/fabric8-pipeline-library@master')
+@Library('github.com/kadel/fabric8-pipeline-library@remove-JOB_NAME')
 def utils = new io.fabric8.Utils()
 clientsNode{
   def envStage = utils.environmentNamespace('stage')
