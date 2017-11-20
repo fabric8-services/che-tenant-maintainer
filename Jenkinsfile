@@ -22,7 +22,6 @@ clientsNode{
 
     def flow = new Fabric8Commands()
     if (flow.isOpenShift()) {
-        def utils = new io.fabric8.Utils()
         def ns = utils.namespace
         def resourceName = utils.getResourceName()
         def is = """
