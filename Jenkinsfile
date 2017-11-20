@@ -62,95 +62,19 @@ spec:
   }
 
   def rc = """
-    {
-      "apiVersion" : "v1",
-      "kind" : "Template",
-      "labels" : { },
-      "metadata" : {
-        "annotations" : {
-          "description" : "Fabric8 namespace migration Ceylon tool",
-          "fabric8.${resourceName}/iconUrl" : "https://raw.githubusercontent.com/eclipse/che/master/ide/che-core-ide-stacks/src/main/resources/stacks-images/type-ceylon.svg"
-        },
-        "labels" : { },
-        "name" : "${resourceName}"
-      },
-      "objects" : [{
-        "kind": "ReplicationController",
-        "apiVersion": "v1",
-        "metadata": {
-            "name": "${resourceName}",
-            "generation": 1,
-            "creationTimestamp": null,
-            "labels": {
-                "component": "${resourceName}",
-                "container": "java",
-                "group": "fabric8-migration",
-                "project": "${resourceName}",
-                "provider": "fabric8",
-                "expose": "true",
-                "version": "${newVersion}"
-            },
-            "annotations": {
-                "fabric8.${resourceName}/iconUrl" : "https://raw.githubusercontent.com/eclipse/che/master/ide/che-core-ide-stacks/src/main/resources/stacks-images/type-ceylon.svg"
-            }
-        },
-        "spec": {
-            "replicas": 1,
-            "selector": {
-                "component": "${resourceName}",
-                "container": "java",
-                "group": "fabric8-migration",
-                "project": "${resourceName}",
-                "provider": "fabric8",
-                "version": "${newVersion}"
-            },
-            "template": {
-                "metadata": {
-                    "creationTimestamp": null,
-                    "labels": {
-                        "component": "${resourceName}",
-                        "container": "java",
-                        "group": "fabric8-migration",
-                        "project": "${resourceName}",
-                        "provider": "fabric8",
-                        "version": "${newVersion}"
-                    }
-                },
-                "spec": {
-                    "containers": [
-                        {
-                            "name": "${resourceName}",
-                            "image": "${env.FABRIC8_DOCKER_REGISTRY_SERVICE_HOST}:${env.FABRIC8_DOCKER_REGISTRY_SERVICE_PORT}/${env.KUBERNETES_NAMESPACE}/${resourceName}:${newVersion}",
-                            "ports": [],
-                            "env": [
-                                {
-                                    "name": "KUBERNETES_NAMESPACE",
-                                    "valueFrom": {
-                                        "fieldRef": {
-                                            "apiVersion": "v1",
-                                            "fieldPath": "metadata.namespace"
-                                        }
-                                    }
-                                }
-                            ],
-                            "resources": {},
-                            "terminationMessagePath": "/dev/termination-log",
-                            "imagePullPolicy": "IfNotPresent",
-                            "securityContext": {}
-                        }
-                    ],
-                    "restartPolicy": "OnFailure",
-                    "terminationGracePeriodSeconds": 30,
-                    "dnsPolicy": "ClusterFirst",
-                    "securityContext": {}
-                }
-            }
-        },
-        "status": {
-            "replicas": 0
-        }
-    }]}
-    """
+apiVersion: v1
+kind: Pod
+metadata:
+  name: ${resourceName}
+  labels:
+    version: "${newVersion}"
+spec:
+  containers:
+  - name: migration
+    image: "${env.FABRIC8_DOCKER_REGISTRY_SERVICE_HOST}:${env.FABRIC8_DOCKER_REGISTRY_SERVICE_PORT}/${env.KUBERNETES_NAMESPACE}/${resourceName}:${newVersion}"
+  restartPolicy: Never
+  serviceAccount: che               
+"""
 
   stage('Rollout to Stage')
   kubernetesApply(file: rc, environment: envStage)
