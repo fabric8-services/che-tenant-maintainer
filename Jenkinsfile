@@ -8,7 +8,7 @@ clientsNode{
   checkout scm
   stage('Build Release')
   echo 'NOTE: running pipelines for the first time will take longer as build and base docker images are pulled onto the node'
-  echo 'NOTE: JOB_NAME = ${env.JOB_NAME}'
+  echo "NOTE: JOB_NAME = ${env.JOB_NAME}""
 
   newVersion = performCanaryRelease {}
 
