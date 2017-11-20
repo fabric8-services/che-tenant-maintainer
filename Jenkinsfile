@@ -1,5 +1,7 @@
 #!/usr/bin/groovy
 @Library('github.com/kadel/fabric8-pipeline-library@remove-JOB_NAME')
+import io.fabric8.Fabric8Commands
+
 def utils = new io.fabric8.Utils()
 def s2iBuild(version){
     def ns = utils.namespace
