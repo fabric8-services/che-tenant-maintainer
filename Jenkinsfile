@@ -73,7 +73,7 @@ spec:
   - name: migration
     image: "${env.FABRIC8_DOCKER_REGISTRY_SERVICE_HOST}:${env.FABRIC8_DOCKER_REGISTRY_SERVICE_PORT}/${env.KUBERNETES_NAMESPACE}/${resourceName}:${newVersion}"
   restartPolicy: Never
-  serviceAccount: che               
+  serviceAccount: dfestal-cheche               
 """
 
   stage('Rollout to Stage')
