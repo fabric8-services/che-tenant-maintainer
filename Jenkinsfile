@@ -2,52 +2,6 @@
 @Library('github.com/kadel/fabric8-pipeline-library@remove-JOB_NAME')
 import io.fabric8.Fabric8Commands
 
-def s2iBuild(version){
-    def utils = new io.fabric8.Utils()
-    def ns = utils.namespace
-    def resourceName = utils.getResourceName()
-    def is = getImageStream(ns, resourceName)
-    def bc = getBuildConfig(ns, resourceName, version)    
-
-    sh "oc delete is ${resourceName} -n ${ns} || true"
-    kubernetesApply(file: is, environment: ns)
-    kubernetesApply(file: bc, environment: ns)
-    sh "oc start-build ${resourceName}-s2i --from-dir ./ --follow -n ${ns}"
-}
-
-def getImageStream(ns){
-    return """
-apiVersion: v1
-kind: ImageStream
-metadata:
-  name: ${resourceName}
-  namespace: ${ns}
-"""
-}
-
-def getBuildConfig(version, ns){
-    return """
-apiVersion: v1
-kind: BuildConfig
-metadata:
-  name: ${resourceName}-s2i
-  namespace: ${ns}
-spec:
-  output:
-    to:
-      kind: ImageStreamTag
-      name: ${resourceName}:${version}
-  runPolicy: Serial
-  source:
-    type: Binary
-  strategy:
-    sourceStrategy:
-      from:
-        kind: "DockerImage"
-        name: "ceylon/s2i-ceylon:1.3.3-jre8"
-"""
-}
-
 def utils = new io.fabric8.Utils()
 
 clientsNode{
@@ -68,7 +22,41 @@ clientsNode{
 
     def flow = new Fabric8Commands()
     if (flow.isOpenShift()) {
-        s2iBuild(newVersion)
+        def utils = new io.fabric8.Utils()
+        def ns = utils.namespace
+        def resourceName = utils.getResourceName()
+        def is = """
+apiVersion: v1
+kind: ImageStream
+metadata:
+  name: ${resourceName}
+  namespace: ${ns}
+"""
+        def bc = """
+apiVersion: v1
+kind: BuildConfig
+metadata:
+  name: ${resourceName}-s2i
+  namespace: ${ns}
+spec:
+  output:
+    to:
+      kind: ImageStreamTag
+      name: ${resourceName}:${newVersion}
+  runPolicy: Serial
+  source:
+    type: Binary
+  strategy:
+    sourceStrategy:
+      from:
+        kind: "DockerImage"
+        name: "ceylon/s2i-ceylon:1.3.3-jre8"
+"""    
+    
+        sh "oc delete is ${resourceName} -n ${ns} || true"
+        kubernetesApply(file: is, environment: ns)
+        kubernetesApply(file: bc, environment: ns)
+        sh "oc start-build ${resourceName}-s2i --from-dir ./ --follow -n ${ns}"
     } else {
         echo 'NOTE: Not on Openshift: do nothing since it is not implemented for now'
     }
