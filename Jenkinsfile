@@ -1,33 +1,6 @@
 #!/usr/bin/groovy
 @Library('github.com/kadel/fabric8-pipeline-library@remove-JOB_NAME')
 def utils = new io.fabric8.Utils()
-clientsNode{
-  def envStage = utils.environmentNamespace('stage')
-  def newVersion = ''
-
-  checkout scm
-  stage('Build Release')
-  echo 'NOTE: running pipelines for the first time will take longer as build and base docker images are pulled onto the node'
-
-  container('clients') {
-    def newVersion = config.version
-    if (newVersion == '') {
-        newVersion = getNewVersion {}
-    }
-
-    env.setProperty('VERSION', newVersion)
-
-    def flow = new Fabric8Commands()
-    if (flow.isOpenShift()) {
-        s2iBuild(newVersion)
-    } else {
-        echo 'NOTE: Not on Openshift: do nothing since it is not implemented for now'
-    }
-
-    return newVersion
-  }
-}
-
 def s2iBuild(version){
 
     def utils = new Utils()
@@ -75,6 +48,29 @@ spec:
         name: "ceylon/s2i-ceylon:1.3.3-jre8"
 """
 }
+
+clientsNode{
+  def envStage = utils.environmentNamespace('stage')
+  def newVersion = ''
+
+  checkout scm
+  stage('Build Release')
+  echo 'NOTE: running pipelines for the first time will take longer as build and base docker images are pulled onto the node'
+
+  container('clients') {
+    if (newVersion == '') {
+        newVersion = getNewVersion {}
+    }
+
+    env.setProperty('VERSION', newVersion)
+
+    def flow = new Fabric8Commands()
+    if (flow.isOpenShift()) {
+        s2iBuild(newVersion)
+    } else {
+        echo 'NOTE: Not on Openshift: do nothing since it is not implemented for now'
+    }
+  }
 
   def rc = """
     {
