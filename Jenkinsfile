@@ -8,9 +8,73 @@ clientsNode{
   checkout scm
   stage('Build Release')
   echo 'NOTE: running pipelines for the first time will take longer as build and base docker images are pulled onto the node'
-  echo "NOTE: JOB_NAME = ${env.JOB_NAME}"
 
-  newVersion = performCanaryRelease {}
+  container('clients') {
+    def newVersion = config.version
+    if (newVersion == '') {
+        newVersion = getNewVersion {}
+    }
+
+    env.setProperty('VERSION', newVersion)
+
+    def flow = new Fabric8Commands()
+    if (flow.isOpenShift()) {
+        s2iBuild(newVersion)
+    } else {
+        echo 'NOTE: Not on Openshift: do nothing since it is not implemented for now'
+    }
+
+    return newVersion
+  }
+}
+
+def s2iBuild(version){
+
+    def utils = new Utils()
+    def ns = utils.namespace
+    def resourceName = utils.getResourceName()
+    def is = getImageStream(ns, resourceName)
+    def bc = getBuildConfig(ns, resourceName, version)    
+
+    sh "oc delete is ${resourceName} -n ${ns} || true"
+    kubernetesApply(file: is, environment: ns)
+    kubernetesApply(file: bc, environment: ns)
+    sh "oc start-build ${resourceName}-s2i --from-dir ./ --follow -n ${ns}"
+
+}
+
+def getImageStream(ns){
+    return """
+apiVersion: v1
+kind: ImageStream
+metadata:
+  name: ${resourceName}
+  namespace: ${ns}
+"""
+}
+
+def getBuildConfig(version, ns){
+    return """
+apiVersion: v1
+kind: BuildConfig
+metadata:
+  name: ${resourceName}-s2i
+  namespace: ${ns}
+spec:
+  output:
+    to:
+      kind: ImageStreamTag
+      name: ${resourceName}:${version}
+  runPolicy: Serial
+  source:
+    type: Binary
+  strategy:
+    sourceStrategy:
+      from:
+        kind: "DockerImage"
+        name: "ceylon/s2i-ceylon:1.3.3-jre8"
+"""
+}
 
   def rc = """
     {
@@ -20,38 +84,38 @@ clientsNode{
       "metadata" : {
         "annotations" : {
           "description" : "Fabric8 namespace migration Ceylon tool",
-          "fabric8.${env.JOB_NAME}/iconUrl" : "https://raw.githubusercontent.com/eclipse/che/master/ide/che-core-ide-stacks/src/main/resources/stacks-images/type-ceylon.svg"
+          "fabric8.${resourceName}/iconUrl" : "https://raw.githubusercontent.com/eclipse/che/master/ide/che-core-ide-stacks/src/main/resources/stacks-images/type-ceylon.svg"
         },
         "labels" : { },
-        "name" : "${env.JOB_NAME}"
+        "name" : "${resourceName}"
       },
       "objects" : [{
         "kind": "ReplicationController",
         "apiVersion": "v1",
         "metadata": {
-            "name": "${env.JOB_NAME}",
+            "name": "${resourceName}",
             "generation": 1,
             "creationTimestamp": null,
             "labels": {
-                "component": "${env.JOB_NAME}",
+                "component": "${resourceName}",
                 "container": "java",
                 "group": "fabric8-migration",
-                "project": "${env.JOB_NAME}",
+                "project": "${resourceName}",
                 "provider": "fabric8",
                 "expose": "true",
                 "version": "${newVersion}"
             },
             "annotations": {
-                "fabric8.${env.JOB_NAME}/iconUrl" : "https://raw.githubusercontent.com/eclipse/che/master/ide/che-core-ide-stacks/src/main/resources/stacks-images/type-ceylon.svg"
+                "fabric8.${resourceName}/iconUrl" : "https://raw.githubusercontent.com/eclipse/che/master/ide/che-core-ide-stacks/src/main/resources/stacks-images/type-ceylon.svg"
             }
         },
         "spec": {
             "replicas": 1,
             "selector": {
-                "component": "${env.JOB_NAME}",
+                "component": "${resourceName}",
                 "container": "java",
                 "group": "fabric8-migration",
-                "project": "${env.JOB_NAME}",
+                "project": "${resourceName}",
                 "provider": "fabric8",
                 "version": "${newVersion}"
             },
@@ -59,10 +123,10 @@ clientsNode{
                 "metadata": {
                     "creationTimestamp": null,
                     "labels": {
-                        "component": "${env.JOB_NAME}",
+                        "component": "${resourceName}",
                         "container": "java",
                         "group": "fabric8-migration",
-                        "project": "${env.JOB_NAME}",
+                        "project": "${resourceName}",
                         "provider": "fabric8",
                         "version": "${newVersion}"
                     }
@@ -70,8 +134,8 @@ clientsNode{
                 "spec": {
                     "containers": [
                         {
-                            "name": "${env.JOB_NAME}",
-                            "image": "${env.FABRIC8_DOCKER_REGISTRY_SERVICE_HOST}:${env.FABRIC8_DOCKER_REGISTRY_SERVICE_PORT}/${env.KUBERNETES_NAMESPACE}/${env.JOB_NAME}:${newVersion}",
+                            "name": "${resourceName}",
+                            "image": "${env.FABRIC8_DOCKER_REGISTRY_SERVICE_HOST}:${env.FABRIC8_DOCKER_REGISTRY_SERVICE_PORT}/${env.KUBERNETES_NAMESPACE}/${resourceName}:${newVersion}",
                             "ports": ],
                             "env": [
                                 {
@@ -98,7 +162,7 @@ clientsNode{
             }
         },
         "status": {
-            "replicas": 1
+            "replicas": 0
         }
     }]}
     """
