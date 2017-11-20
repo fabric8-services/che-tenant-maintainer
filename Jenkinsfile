@@ -5,7 +5,7 @@ import io.fabric8.Fabric8Commands
 def utils = new io.fabric8.Utils()
 
 clientsNode{
-  def envStage = utils.environmentNamespace('stage')
+  def envStage = utils.environmentNamespace('che')
   def newVersion = ''
   def resourceName = utils.getResourceName()
 
@@ -67,13 +67,15 @@ kind: Pod
 metadata:
   name: ${resourceName}
   labels:
+    group: io.fabric8.tenant.apps
+    provider: fabric8
     version: "${newVersion}"
 spec:
   containers:
   - name: migration
     image: "${env.FABRIC8_DOCKER_REGISTRY_SERVICE_HOST}:${env.FABRIC8_DOCKER_REGISTRY_SERVICE_PORT}/${env.KUBERNETES_NAMESPACE}/${resourceName}:${newVersion}"
   restartPolicy: Never
-  serviceAccount: dfestal-cheche               
+  serviceAccount: che               
 """
 
   stage('Rollout to Stage')
