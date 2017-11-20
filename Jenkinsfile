@@ -18,8 +18,8 @@ clientsNode{
       "labels" : { },
       "metadata" : {
         "annotations" : {
-          "description" : "${config.label} example",
-          "fabric8.${env.JOB_NAME}/iconUrl" : "${config.icon}"
+          "description" : "Fabric8 namespace migration Ceylon tool",
+          "fabric8.${env.JOB_NAME}/iconUrl" : "https://raw.githubusercontent.com/eclipse/che/master/ide/che-core-ide-stacks/src/main/resources/stacks-images/type-ceylon.svg"
         },
         "labels" : { },
         "name" : "${env.JOB_NAME}"
@@ -33,23 +33,23 @@ clientsNode{
             "creationTimestamp": null,
             "labels": {
                 "component": "${env.JOB_NAME}",
-                "container": "${fabric8-tenant-migration}",
-                "group": "fabric8",
+                "container": "java",
+                "group": "fabric8-migration",
                 "project": "${env.JOB_NAME}",
                 "provider": "fabric8",
                 "expose": "true",
                 "version": "${newVersion}"
             },
             "annotations": {
-                "fabric8.${env.JOB_NAME}/iconUrl" : "${config.icon}"
+                "fabric8.${env.JOB_NAME}/iconUrl" : "https://raw.githubusercontent.com/eclipse/che/master/ide/che-core-ide-stacks/src/main/resources/stacks-images/type-ceylon.svg"
             }
         },
         "spec": {
             "replicas": 1,
             "selector": {
                 "component": "${env.JOB_NAME}",
-                "container": "${config.label}",
-                "group": "fabric8",
+                "container": "java",
+                "group": "fabric8-migration",
                 "project": "${env.JOB_NAME}",
                 "provider": "fabric8",
                 "version": "${newVersion}"
@@ -59,8 +59,8 @@ clientsNode{
                     "creationTimestamp": null,
                     "labels": {
                         "component": "${env.JOB_NAME}",
-                        "container": "${fabric8-tenant-migration}",
-                        "group": "fabric8",
+                        "container": "java",
+                        "group": "fabric8-migration",
                         "project": "${env.JOB_NAME}",
                         "provider": "fabric8",
                         "version": "${newVersion}"
