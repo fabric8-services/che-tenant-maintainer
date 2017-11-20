@@ -5,7 +5,7 @@ import io.fabric8.Fabric8Commands
 def utils = new io.fabric8.Utils()
 
 clientsNode{
-  def envStage = utils.environmentNamespace('che')
+  def envStage = utils.environmentNamespace('stage')
   def newVersion = ''
   def resourceName = utils.getResourceName()
 
@@ -75,7 +75,7 @@ spec:
   - name: migration
     image: "${env.FABRIC8_DOCKER_REGISTRY_SERVICE_HOST}:${env.FABRIC8_DOCKER_REGISTRY_SERVICE_PORT}/${env.KUBERNETES_NAMESPACE}/${resourceName}:${newVersion}"
   restartPolicy: Never
-  serviceAccount: che               
+  serviceAccountName: che               
 """
 
   stage('Rollout to Stage')
