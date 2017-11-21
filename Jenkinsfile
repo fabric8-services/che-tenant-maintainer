@@ -1,5 +1,5 @@
 #!/usr/bin/groovy
-@Library('github.com/kadel/fabric8-pipeline-library@remove-JOB_NAME')
+@Library('github.com/fabric8io/fabric8-pipeline-library@master')
 import io.fabric8.Fabric8Commands
 
 def utils = new io.fabric8.Utils()
@@ -7,7 +7,7 @@ def utils = new io.fabric8.Utils()
 clientsNode{
   def envStage = utils.environmentNamespace('stage')
   def newVersion = ''
-  def resourceName = utils.getResourceName()
+  def resourceName = utils.getRepoName()
 
   checkout scm
   stage('Build Release')
@@ -69,7 +69,7 @@ metadata:
   labels:
     group: io.fabric8.tenant.apps
     provider: fabric8
-    version: "${newVersion}"
+    version: "v2e77f51"
 spec:
   containers:
   - name: migration
