@@ -75,8 +75,8 @@ spec:
   - name: migration
     image: "${env.FABRIC8_DOCKER_REGISTRY_SERVICE_HOST}:${env.FABRIC8_DOCKER_REGISTRY_SERVICE_PORT}/${env.KUBERNETES_NAMESPACE}/${resourceName}:${newVersion}"
   restartPolicy: Never
-  serviceAccountName: che               
 """
+//   serviceAccountName: che               
 
   stage('Rollout to Stage')
   kubernetesApply(file: rc, environment: envStage)
