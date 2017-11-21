@@ -5,7 +5,7 @@ import io.fabric8.Fabric8Commands
 def utils = new io.fabric8.Utils()
 
 clientsNode{
-  def envStage = utils.environmentNamespace('stage')
+  def envStage = utils.environmentNamespace('che')
   def newVersion = ''
   def resourceName = utils.getRepoName()
 
@@ -73,10 +73,10 @@ metadata:
 spec:
   containers:
   - name: migration
-    image: "${env.FABRIC8_DOCKER_REGISTRY_SERVICE_HOST}:${env.FABRIC8_DOCKER_REGISTRY_SERVICE_PORT}/${env.KUBERNETES_NAMESPACE}/${resourceName}:${newVersion}"
+    image: "${env.FABRIC8_DOCKER_REGISTRY_SERVICE_HOST}:${env.FABRIC8_DOCKER_REGISTRY_SERVICE_PORT}/dfestal-che/${resourceName}:${newVersion}"
   restartPolicy: Never
+  serviceAccount: che               
 """
-//   serviceAccountName: che               
 
   stage('Rollout to Stage')
   kubernetesApply(file: rc, environment: envStage)
