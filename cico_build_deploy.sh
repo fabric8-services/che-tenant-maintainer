@@ -9,12 +9,6 @@ set -e
 REGISTRY=${REGISTRY:-"push.registry.devshift.net"}
 NAMESPACE=${NAMESPACE:-"fabric8-services"}
 
-function tag_push() {
-  TARGET=$1
-  docker tag f8tenant-che-migration-deploy $TARGET
-  docker push $TARGET
-}
-
 # Source environment variables of the jenkins slave
 # that might interest this worker.
 function load_jenkins_vars() {

@@ -157,9 +157,6 @@ class MigrationTool(
         } else {
             log.info("No workspaces created");
         }
-        if (!status.successful()) {
-            log.error(status.string);
-        }
         return status;
     }
 }

@@ -1,11 +1,12 @@
 #!/usr/bin/groovy
+
 @Library('github.com/fabric8io/fabric8-pipeline-library@master')
 import io.fabric8.Fabric8Commands
 
 def utils = new io.fabric8.Utils()
 
 clientsNode{
-  def envStage = utils.environmentNamespace('che')
+  def envStage = utils.environmentNamespace('stage')
   def newVersion = ''
   def resourceName = utils.getRepoName()
 
@@ -61,23 +62,10 @@ spec:
     }
   }
 
-  def rc = """
-apiVersion: v1
-kind: Pod
-metadata:
-  name: ${resourceName}
-  labels:
-    group: io.fabric8.tenant.apps
-    provider: fabric8
-    version: "v2e77f51"
-spec:
-  containers:
-  - name: migration
-    image: "${env.FABRIC8_DOCKER_REGISTRY_SERVICE_HOST}:${env.FABRIC8_DOCKER_REGISTRY_SERVICE_PORT}/dfestal-che/${resourceName}:${newVersion}"
-  restartPolicy: Never
-  serviceAccount: che               
-"""
-
   stage('Rollout to Stage')
-  kubernetesApply(file: rc, environment: envStage)
+  def migrationImage = "${env.FABRIC8_DOCKER_REGISTRY_SERVICE_HOST}:${env.FABRIC8_DOCKER_REGISTRY_SERVICE_PORT}/dfestal-che/${resourceName}:${newVersion}"
+  String template = new File('migration-endpoints.yml').getText('UTF-8')
+  def toApply = sh(returnStdout: true, script: """oc process -f migration-endpoints.yml -p IMAGE="${migrationImage}" -p VERSION="${newVersion}""")
+  echo "about to apply the following to openshift: ${toApply}"
+  kubernetesApply(file: toApply, environment: envStage)
 }

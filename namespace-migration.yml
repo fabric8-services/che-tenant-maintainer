@@ -1,0 +1,49 @@
+apiVersion: v1
+kind: Template
+metadata:
+  name: fabric8-tenant-che-migration-endpoints-template
+objects:
+- apiVersion: v1
+  kind: Pod
+  metadata:
+    name: fabric8-tenant-che-migration
+    labels:
+      group: io.fabric8.tenant.apps
+      provider: fabric8
+      version: ${VERSION}
+  spec:
+    containers:
+    - name: migration
+      env:
+      - name: CHE_MULTITENANT_SERVER
+        valueFrom:
+          configMapKeyRef:
+            key: che-multitenant-server
+            name: migration
+      - name: OSIO_TOKEN
+        valueFrom:
+          configMapKeyRef:
+            key: osio-token
+            name: migration
+      - name: IDENTITY_ID
+        valueFrom:
+          configMapKeyRef:
+            key: identity-id
+            name: migration
+      - name: REQUEST_ID
+        valueFrom:
+          configMapKeyRef:
+            key: request-id
+            name: migration
+      image: ${IMAGE}
+      imagePullPolicy: "Always"
+    restartPolicy: Never
+    serviceAccount: che
+parameters:
+- description: Version
+  name: VERSION
+  value: latest
+- description: The container image
+  name: IMAGE
+  value: "docker.io/dfestal/fabric8-tenant-che-migration:latest"
+

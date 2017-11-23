@@ -8,4 +8,7 @@ encoding=UTF-8
 autoexportmavendependencies=true
 fullyexportmavendependencies=true
 flatclasspath=true
+offline=false
 
+[runtool.jvm]
+module=io.fabric8.tenant.che.migration.namespace

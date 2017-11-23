@@ -1,12 +1,9 @@
 #!/bin/bash
 
-echo "In the custom build.sh !!!"
-
 set -e
 
-echo "current dir : $(pwd)"
-echo "current dir contents : $(ls -R)"
-
-echo "Compiling..."
+echo "Compiling Ceylon project in directory '$(pwd)' ..."
 
 ceylon compile
+ceylon plugin install ceylon.swarm/1.3.3 || true
+ceylon swarm --provided-module=javax:javaee-api io.fabric8.tenant.che.migration.namespace io.fabric8.tenant.che.migration.workspaces io.fabric8.tenant.che.migration.rest
