@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -e
 
+REGISTRY=${REGISTRY:-"docker.io"}
+NAMESPACE=${NAMESPACE:-"dfestal"}
+
 function tag_push() {
   TARGET=$1
   docker tag f8tenant-che-migration-deploy $TARGET
