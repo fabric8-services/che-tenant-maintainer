@@ -39,9 +39,6 @@ metadata:
   name: ${resourceName}-s2i
   namespace: ${ns}
 spec:
-  env:
-    - name: ADD_REST_ENDPOINTS
-      value: "true"
   output:
     to:
       kind: ImageStreamTag
@@ -51,6 +48,9 @@ spec:
     type: Binary
   strategy:
     sourceStrategy:
+      env:
+        - name: ADD_REST_ENDPOINTS
+          value: 'true'
       from:
         kind: "DockerImage"
         name: "ceylon/s2i-ceylon:1.3.3-jre8"
