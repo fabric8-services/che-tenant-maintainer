@@ -10,7 +10,6 @@ import javax.ws.rs.core {
 path("namespace")
 shared class NamespaceEndpoint() {
     get
-    path("migrate")
     produces {MediaType.applicationJson}
     shared Integer migrate(String? debug = null) {
         try {
@@ -24,7 +23,7 @@ shared class NamespaceEndpoint() {
     path("help")
     produces {MediaType.textPlain}
     shared String help()
-        => """The `/migrate` endpoint will try to fully migrate
+        => """The `../workspaces` endpoint will try to fully migrate
               the current OSIO namespace to multi-tenant Che
 
               This application should be deployed in the user OSIO

@@ -12,7 +12,6 @@ import javax.ws.rs.core {
 path("workspaces")
 shared class WorkspacesEndpoint() {
     get
-    path("migrate")
     produces {MediaType.applicationJson}
     shared Status migrate(context UriInfo info) => doMigration (*[
         for (param in info.getQueryParameters(true).entrySet())
