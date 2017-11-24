@@ -45,9 +45,7 @@ spec:
       name: ${resourceName}:${newVersion}
   resources:
     limits:
-      memory: '1400Mi'
-    requests:
-      memory: '1400Mi'
+      memory: '1024Mi'
   runPolicy: Serial
   source:
     type: Binary
@@ -56,6 +54,8 @@ spec:
       env:
         - name: ADD_REST_ENDPOINTS
           value: 'true'
+        - name: JAVA_TOOL_OPTIONS
+          value: '-Xmx800m'
       from:
         kind: "DockerImage"
         name: "ceylon/s2i-ceylon:1.3.3-jre8"
@@ -95,7 +95,7 @@ spec:
   echo "About to apply the following to openshift: ${migrationCM}"
   kubernetesApply(file: migrationCM, environment: envStage)
 
-  def deployment = sh(returnStdout: true, script: "oc process -f migration-endpoints.yml -v IMAGE=\"${migrationImage}\" -v VERSION=\"${newVersion}\"")
+  def deployment = sh(returnStdout: true, script: "oc process -f migration-endpoints.yml -v IMAGE=\"${migrationImage}\" -v IMAGE_NAMESPACE_PREFIX=\"\" -v VERSION=\"${newVersion}\"")
   echo "About to apply the following to openshift: ${deployment}"
   kubernetesApply(file: deployment, environment: envStage)
 }
