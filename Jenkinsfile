@@ -39,6 +39,9 @@ metadata:
   name: ${resourceName}-s2i
   namespace: ${ns}
 spec:
+  env:
+    - name: ADD_REST_ENDPOINTS
+      value: "true"
   output:
     to:
       kind: ImageStreamTag
@@ -56,7 +59,7 @@ spec:
         sh "oc delete is ${resourceName} -n ${ns} || true"
         kubernetesApply(file: is, environment: ns)
         kubernetesApply(file: bc, environment: ns)
-        sh "oc start-build ${resourceName}-s2i -e ADD_REST_ENDPOINTS=\"true\" --from-dir ./ --follow -n ${ns}"
+        sh "oc start-build ${resourceName}-s2i --from-dir ./ --follow -n ${ns}"
     } else {
         echo 'NOTE: Not on Openshift: do nothing since it is not implemented for now'
     }
