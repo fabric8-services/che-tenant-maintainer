@@ -45,7 +45,7 @@ spec:
       name: ${resourceName}:${newVersion}
   resources:
     limits:
-      cpu: '2'
+      cpu: '1'
       memory: 1500Mi
   runPolicy: Serial
   source:
