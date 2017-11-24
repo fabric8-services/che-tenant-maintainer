@@ -71,14 +71,14 @@ spec:
 apiVersion: v1
 kind: ImageStream
 metadata:
-name: ${resourceName}
+  name: ${resourceName}
 spec:
-tags:
-- from:
-    kind: ImageStreamImage
-    name: ${resourceName}@${isSha}
-    namespace: ${utils.getNamespace()}
-  name: ${newVersion}
+  tags:
+  - from:
+      kind: ImageStreamImage
+      name: ${resourceName}@${isSha}
+      namespace: ${utils.getNamespace()}
+    name: ${newVersion}
 """
   echo "About to apply the following to openshift: ${isForDeployment}"
   kubernetesApply(file: isForDeployment, environment: envStage)
