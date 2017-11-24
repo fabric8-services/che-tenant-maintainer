@@ -15,6 +15,8 @@ objects:
     name: fabric8-tenant-che-migration-endpoints
   spec:
     replicas: 1
+    strategy:
+      type: Recreate
     selector:
       provider: fabric8
       project: fabric8-tenant-che-migration-endpoints
