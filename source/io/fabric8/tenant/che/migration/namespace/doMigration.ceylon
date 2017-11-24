@@ -12,11 +12,11 @@ import ceylon.logging {
 }
 Integer doMigration(String? debugLogsParam = null, String? cleanupSingleTenantParam = null) {
     logSettings.reset();
-    value debugLogs = debugLogsParam else env.debugLogs else "false";
-    if (debugLogs.lowercased == "true") {
+    value debugLogs = (debugLogsParam else env.debugLogs else "false").lowercased == "true";
+    if (debugLogs) {
         defaultPriority = debug;
     }
-    value cleanupSingleTenant = (cleanupSingleTenantParam else env.cleanupSingleTenant else "false") == "true" ;
+    value cleanupSingleTenant = (cleanupSingleTenantParam else env.cleanupSingleTenant else "false").lowercased == "true" ;
 
     value keycloakToken = env.osioToken;
     value destinationCheServer = env.multiTenantCheServer;
@@ -41,7 +41,8 @@ Integer doMigration(String? debugLogsParam = null, String? cleanupSingleTenantPa
                 // user tenant is not in a consistent state.
                 // We should reset his environment in single-tenant mode
                 // before retrying the migration.
-
+                log.error("Single-tenant Che namespace '`` namespace ``' is in an inconsistent state ('che' deployment without a 'che' route).
+                           You should switch back to single-tenant mode, update your tenant and retry");
                 return 1;
             }
 
@@ -58,7 +59,8 @@ Integer doMigration(String? debugLogsParam = null, String? cleanupSingleTenantPa
         "source"-> singleTenantCheServer,
         "token"-> keycloakToken,
         "destination"-> destinationCheServer,
-        "ignore-existing"-> "true"
+        "ignore-existing"-> "true",
+        if(debugLogs) "log-level" -> "DEBUG"
     }.map((name -> val)=> if (exists val) then "--``name``=``val``" else null)
         .coalesced
         .sequence();
