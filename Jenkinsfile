@@ -85,5 +85,5 @@ spec:
 
   def deployment = sh(returnStdout: true, script: "oc process -f migration-endpoints.yml -v IMAGE=\"${migrationImage}\" -v VERSION=\"${newVersion}\"")
   echo "About to apply the following to openshift: ${deployment}"
-  kubernetesApply(file: toApply, environment: envStage)
+  kubernetesApply(file: deployment, environment: envStage)
 }
