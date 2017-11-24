@@ -34,9 +34,12 @@ shared void run() {
     }
     logSettings.format = logToJson;
 
-    Integer exitCode;
+    variable Integer exitCode;
     try {
         exitCode = doMigration();
+    } catch(Exception e) {
+        e.printStackTrace();
+        exitCode = 1;
     } finally {
         cleanMigrationResources();
     }
