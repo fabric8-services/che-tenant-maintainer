@@ -65,19 +65,20 @@ spec:
   stage('Rollout to Stage')
   def migrationImage = "${resourceName}:${newVersion}"
   def isSha = utils.getImageStreamSha(resourceName)
+  def ns = utils.namespace
 
   def isForDeployment = """
-- apiVersion: v1
-  kind: ImageStream
-  metadata:
-    name: ${resourceName}
-  spec:
-    tags:
-    - from:
-        kind: ImageStreamImage
-        name: ${resourceName}@${isSha}
-        namespace: ${utils.getNamespace()}
-      name: ${newVersion}
+apiVersion: v1
+kind: ImageStream
+metadata:
+name: ${resourceName}
+spec:
+tags:
+- from:
+    kind: ImageStreamImage
+    name: ${resourceName}@${isSha}
+    namespace: ${utils.getNamespace()}
+  name: ${newVersion}
 """
   echo "About to apply the following to openshift: ${isForDeployment}"
   kubernetesApply(file: isForDeployment, environment: envStage)
