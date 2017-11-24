@@ -83,6 +83,10 @@ spec:
   echo "About to apply the following to openshift: ${isForDeployment}"
   kubernetesApply(file: isForDeployment, environment: envStage)
 
+  def migrationCM = sh(returnStdout: true, script: "oc process -f migration-cm.yml")
+  echo "About to apply the following to openshift: ${migrationCM}"
+  kubernetesApply(file: migrationCM, environment: envStage)
+
   def deployment = sh(returnStdout: true, script: "oc process -f migration-endpoints.yml -v IMAGE=\"${migrationImage}\" -v VERSION=\"${newVersion}\"")
   echo "About to apply the following to openshift: ${deployment}"
   kubernetesApply(file: deployment, environment: envStage)
