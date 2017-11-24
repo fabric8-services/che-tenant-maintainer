@@ -54,6 +54,14 @@ objects:
         terminationGracePeriodSeconds: 2
     triggers:
     - type: ConfigChange
+    - imageChangeParams:
+        automatic: true
+        containerNames:
+        - fabric8-tenant-che-migration-endpoints
+        from:
+          kind: ImageStreamTag
+          name: ${IMAGE}
+      type: ImageChange
 - apiVersion: v1
   kind: Service
   metadata:
