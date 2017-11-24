@@ -43,6 +43,10 @@ spec:
     to:
       kind: ImageStreamTag
       name: ${resourceName}:${newVersion}
+  resources:
+    limits:
+      cpu: '2'
+      memory: 1500Mi
   runPolicy: Serial
   source:
     type: Binary
