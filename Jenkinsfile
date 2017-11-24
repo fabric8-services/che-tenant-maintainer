@@ -64,6 +64,8 @@ spec:
 
   stage('Rollout to Stage')
   def migrationImage = "${resourceName}:${newVersion}"
+
+  def ns = utils.namespace;
   def toApply = sh(returnStdout: true, script: "oc process -f migration-endpoints.yml -v IMAGE=\"${ns}/${migrationImage}\" -v VERSION=\"${newVersion}\"")
   echo "about to apply the following to openshift: ${toApply}"
   kubernetesApply(file: toApply, environment: envStage)
