@@ -15,6 +15,10 @@ objects:
     containers:
     - name: migration
       env:
+      - name: DEBUG
+        value: ${DEBUG}
+      - name: CLEANUP_SINGLE_TENANT
+        value: ${CLEANUP_SINGLE_TENANT}
       - name: CHE_MULTITENANT_SERVER
         valueFrom:
           configMapKeyRef:
@@ -46,4 +50,9 @@ parameters:
 - description: The container image
   name: IMAGE
   value: "docker.io/dfestal/fabric8-tenant-che-migration:latest"
-
+- description: If we should cleanup single resources after migration
+  name: CLEANUP_SINGLE_TENANT
+  value: "true"
+- description: Add DEBUG logs
+  name: DEBUG
+  value: "false"
