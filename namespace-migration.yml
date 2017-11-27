@@ -6,7 +6,7 @@ objects:
 - apiVersion: v1
   kind: Pod
   metadata:
-    name: fabric8-tenant-che-migration
+    name: fabric8-tenant-che-migration-${POD_ID}
     labels:
       group: io.fabric8.tenant.apps
       provider: fabric8
@@ -56,3 +56,7 @@ parameters:
 - description: Add DEBUG logs
   name: DEBUG
   value: "false"
+- description: Migration Pod ID
+  name: POD_ID
+  generate: expression
+  from: "[a-z0-9]{12}"
