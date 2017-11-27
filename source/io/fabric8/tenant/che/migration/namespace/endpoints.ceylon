@@ -1,7 +1,8 @@
 import javax.ws.rs {
     path,
     get,
-    produces
+    produces,
+    queryParam
 }
 import javax.ws.rs.core {
     MediaType
@@ -11,7 +12,7 @@ path("namespace")
 shared class NamespaceEndpoint() {
     get
     produces {MediaType.applicationJson}
-    shared Integer migrate(String? debug = null) {
+    shared Integer migrate(queryParam("debug") String? debug = null) {
         try {
             return doMigration(debug);
         } finally {

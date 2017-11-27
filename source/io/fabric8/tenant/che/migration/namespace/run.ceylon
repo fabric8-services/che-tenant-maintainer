@@ -18,16 +18,16 @@ shared void run() {
     value requestId = env.requestId;
 
     function logToJson(Priority p, String m, Throwable? t) {
-        variable String? stacktrace = null;
+        variable String stacktrace = "";
         if (exists t) {
-            printStackTrace(t, (st) { stacktrace = st; });
+            printStackTrace(t, (st) { stacktrace += st; });
         }
         return Object({
             "timestamp" -> systemTime.milliseconds(),
             "logger_name" -> "fabric8-tenant-che-migration",
             "message" -> m,
             "priority" -> p.string,
-            if (exists st = stacktrace) then "stack_trace" -> st else null,
+            if (! stacktrace.empty) then "stack_trace" -> stacktrace else null,
             if (exists id = identityId) then "identity_id" -> id else null,
             if (exists id = requestId) then "req_id" -> id else null
         }.coalesced).string;

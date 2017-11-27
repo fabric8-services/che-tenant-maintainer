@@ -10,6 +10,10 @@ import ceylon.logging {
     debug,
     defaultPriority
 }
+import java.lang {
+    Thread
+}
+
 Integer doMigration(String? debugLogsParam = null, String? cleanupSingleTenantParam = null) {
     logSettings.reset();
     value debugLogs = (debugLogsParam else env.debugLogs else "false").lowercased == "true";
@@ -27,16 +31,37 @@ Integer doMigration(String? debugLogsParam = null, String? cleanupSingleTenantPa
             value cheServerDeploymentConfig =
                     oc.deploymentConfigs()
                         .inNamespace(namespace)
-                        .withName(cheSingleTenantCheServerName).get();
+                        .withName(cheSingleTenantCheServerName);
 
-            if (! exists cheServerDeploymentConfig) {
+            if (! cheServerDeploymentConfig?.get() exists) {
                 log.info("Migration skipped (no more Che server)");
                 return 0;
             }
 
-            value cheServerRoute = { *oc.routes().list().items }
-                .find((route) => route.metadata.name == cheSingleTenantCheServerRoute);
+            cheServerDeploymentConfig.scale(1, true);
 
+            value cheServerPods => { *oc.pods().withLabel("deploymentconfig", "che").list().items};
+            value podReady => if (exists ready = cheServerPods.first
+                        ?.status?.containerStatuses?.get(0)
+                        ?.ready?.booleanValue()) then ready else false;
+
+            if (!podReady) {
+                log.info("Starting the single-tenant Che server...");
+                value timeoutMinutes = 5;
+                for(retry in 0:timeoutMinutes*60) {
+                    if(podReady) {
+                        break;
+                    }
+                    Thread.sleep(1000);
+                } else {
+                    log.error("Single-tenant Che server could not be started even after a ``timeoutMinutes`` minutes in namespace '`` namespace ``'");
+                    return 1;
+                }
+                log.info("... Started");
+            }
+
+            value cheServerRouteOperation = oc.routes().withName(cheSingleTenantCheServerRoute);
+            value cheServerRoute = cheServerRouteOperation?.get();
             if (! exists cheServerRoute) {
                 // user tenant is not in a consistent state.
                 // We should reset his environment in single-tenant mode
@@ -49,6 +74,7 @@ Integer doMigration(String? debugLogsParam = null, String? cleanupSingleTenantPa
             value spec= cheServerRoute.spec;
             singleTenantCheServer =
                     "http`` if (spec.tls exists) then "s" else "" ``://``spec.host``";
+
         } catch(Exception e){
             log.error("Unexpected exception while migrating namespace `` namespace ``", e);
             return 1;
@@ -65,7 +91,7 @@ Integer doMigration(String? debugLogsParam = null, String? cleanupSingleTenantPa
         .coalesced
         .sequence();
 
-    log.info("Calling workspace migration utility with the following arguments:\n`` args ``");
+    log.debug("Calling workspace migration utility with the following arguments:\n`` args ``");
 
     value status = migrateWorkspaces(*args);
     if (!status.successful()) {

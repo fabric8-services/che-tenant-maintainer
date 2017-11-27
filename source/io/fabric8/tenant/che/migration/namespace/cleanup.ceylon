@@ -2,7 +2,8 @@ import io.fabric8.openshift.client {
     DefaultOpenShiftClient
 }
 import  io.fabric8.openshift.api.model {
-    Route
+    Route,
+    DeploymentConfig
 }
 import io.fabric8.kubernetes.api.model {
     ConfigMap,
@@ -20,33 +21,48 @@ import io.fabric8.kubernetes.api.model.extensions {
 import java.lang {
     Thread,
     InterruptedException,
-    Types { str = nativeString }
+    JavaString = String
+}
+import java.util {
+    JavaMap = Map
 }
 
+Map<String, String> toCeylon(JavaMap<JavaString, JavaString> javaMap) =>
+        map { for (e in javaMap.entrySet()) e.key.string -> e.\ivalue.string };
+
+Boolean isCheServerPod(Pod pod)
+        => toCeylon(pod.metadata.labels).containsEvery {
+            "deploymentconfig" -> "che"
+        };
+
 Boolean shouldBeDeleted(HasMetadata resource) {
-    log.debug("Checking whether the following resource should be deleted: `` resource ``");
+    log.debug("Checking whether the following resource should be deleted '`` resource.kind `` : `` resource.metadata.name ``'" );
 
     value result = switch(r = resource)
+
+    case(is DeploymentConfig)
+        r.metadata.name == "che"
+
     case(is Route)
         r.metadata.name == "che"
 
     case (is Service)
-        every {
-            if (exists app = r.spec.selector[str("app")]?.string) then app == "che" else false,
-            if (exists group = r.spec.selector[str("group")]?.string) then group == "io.fabric8.tenant.apps" else false
+        toCeylon(r.spec.selector).containsEvery {
+            "app"->"che",
+            "group" -> "io.fabric8.tenant.apps"
         }
 
     case (is Deployment)
-        r.metadata.name == "che"
+        false
 
     case (is ReplicaSet)
-        r.metadata.name == "che"
+        false
 
     case (is ConfigMap)
         r.metadata.name == "che"
 
     case (is Pod)
-        if (exists label = r.metadata.labels[str("deploymentconfig")]?.string) then label=="che" else false
+        isCheServerPod(r)
 
     else false;
 
@@ -59,17 +75,45 @@ Boolean cleanSingleTenantCheServer() {
     try(oc = DefaultOpenShiftClient()) {
         String namespace = osioCheNamespace(oc);
 
-        log.info("Cleaning single-tenant OpenShift resources in namespace `` namespace ``");
+        log.info("Stopping the Che server`` namespace ``");
+
+        value cheServerDeploymentConfig =
+                oc.deploymentConfigs()
+                    .inNamespace(namespace)
+                    .withName(cheSingleTenantCheServerName);
+        cheServerDeploymentConfig?.scale(0, true);
+
+        value cheServerPods => { *oc.pods().inNamespace(namespace).list().items }
+        .filter(isCheServerPod);
+
+        value timeoutMinutes = 2;
+        try {
+            for(retry in 0:2*60) {
+                if (cheServerPods.empty) {
+                    break;
+                }
+                Thread.sleep(1000);
+            } else {
+                // timeout reached
+                log.error("Single-tenant Che server Pod could not be stopped, even after a `` timeoutMinutes `` minutes timeout");
+                return false;
+            }
+        } catch(InterruptedException ie) {
+            log.error("Interruped while waiting for the Che server pod termination", ie);
+            return false;
+        }
 
         void delete(HasMetadata resource) {
             oc.resource(resource).delete();
         }
 
+        log.info("Cleaning single-tenant OpenShift resources in namespace `` namespace ``");
+
         value resourceTypes = {
+            oc.deploymentConfigs(),
             oc.routes(),
             oc.services(),
             oc.extensions().deployments(),
-            oc.services(),
             oc.extensions().replicaSets(),
             oc.configMaps()
         };
@@ -79,25 +123,6 @@ Boolean cleanSingleTenantCheServer() {
             .flatMap((list) => { *list } )
             .filter(shouldBeDeleted)
             .each(delete);
-
-        value cheServerPods = { *oc.pods().inNamespace(namespace).list().items }
-        .filter(shouldBeDeleted);
-
-        try {
-            for(retry in [0:120]) {
-                if (cheServerPods.empty) {
-                    break;
-                }
-                Thread.sleep(1000);
-            } else {
-                // timeout reached
-                log.error("Single-tenant Che server Pod could not be stopped, even after a 120 seconds timeout");
-                return false;
-            }
-        } catch(InterruptedException ie) {
-            log.error("Interruped while waiting for the Che server pod termination", ie);
-            return false;
-        }
     }
     return true;
 }
