@@ -49,6 +49,6 @@ TAG=$(echo $GIT_COMMIT | cut -c1-${DEVSHIFT_TAG_LEN})
 service docker start
 login
 
-./buildAndPushToDocker.sh
+source ./buildAndPushToDocker.sh
 
 echo 'CICO: Image pushed, ready to update deployed app'
