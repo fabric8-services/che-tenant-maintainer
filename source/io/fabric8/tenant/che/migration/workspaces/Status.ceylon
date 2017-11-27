@@ -1,8 +1,8 @@
 import ceylon.file {
     Path
 }
-import ceylon.http.client {
-    ClientResponse=Response
+import okhttp3 {
+    Response
 }
 
 shared class Status {
@@ -48,13 +48,13 @@ shared class Status {
     
     shared new destinationCheServerNotAccessible extends simpleStatus(3) {}
     
-    function dumpResponse(ClientResponse response)
-            => "``response.status`` - `` response.contents ``";
+    function dumpResponse(Response response)
+            => "``response.code()`` - `` response.body()?.string_method() else "" ``";
     
-    shared new unexpectedErrorInSourceCheServer(ClientResponse response) extends fromCode(4) {
+    shared new unexpectedErrorInSourceCheServer(Response response) extends fromCode(4) {
         details = "\n" + dumpResponse(response);
     }
-    shared new unexpectedErrorInDestinationCheServer(ClientResponse response) extends fromCode(5) {
+    shared new unexpectedErrorInDestinationCheServer(Response response) extends fromCode(5) {
         details = "\n" + dumpResponse(response);
     }
     shared new invalidJsonInWorkspaceList(String jsonString) extends fromCode(6) {
