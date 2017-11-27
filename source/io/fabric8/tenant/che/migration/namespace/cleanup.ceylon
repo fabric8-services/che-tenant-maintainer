@@ -75,7 +75,7 @@ Boolean cleanSingleTenantCheServer() {
     try(oc = DefaultOpenShiftClient()) {
         String namespace = osioCheNamespace(oc);
 
-        log.info("Stopping the Che server`` namespace ``");
+        log.info("Stopping the Che server in namespace `` namespace ``");
 
         value cheServerDeploymentConfig =
                 oc.deploymentConfigs()
