@@ -16,12 +16,14 @@ shared object logSettings {
     shared variable File? file = null;
     shared variable Boolean quiet = false;
     shared variable String(Priority, String, Throwable?) format = (Priority p, String m, Throwable? t) {
-        value message = "[``systemTime.instant()``] ``p.string``: ``m``";
+        variable value message = m;
         variable value stacktrace = "";
         if (exists t) {
-            printStackTrace(t, (st) { stacktrace = "\n" + st; });
+            message += t.string;
+            stacktrace += "\n";
+            printStackTrace(t, (st) { stacktrace += st; });
         }
-        return message + stacktrace;
+        return "[``systemTime.instant()``] ``p.string``: ``m + stacktrace``";
     };
 
     addLogWriter {
