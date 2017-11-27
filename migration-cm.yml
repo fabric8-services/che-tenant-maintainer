@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: Template
+metadata:
+  name: fabric8-tenant-che-migration-configmap-template
+objects:
+- apiVersion: v1
+  data:
+    che-multitenant-server: 'https://che-dfestal-che.glusterpoc37aws.devshift.net'
+    identity-id: theIdentity
+    osio-token: ${OSIO_TOKEN}
+
+    request-id: theRequestId
+  kind: ConfigMap
+  metadata:
+    name: migration
+    namespace: dfestal-che
+parameters:
+- description: Osio Token
+  name: OSIO_TOKEN
+  value: ""

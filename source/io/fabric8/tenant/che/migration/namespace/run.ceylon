@@ -1,62 +1,47 @@
-import io.fabric8.openshift.client {
-    DefaultOpenShiftClient
+import ceylon.json {
+    Object
 }
-
-String osioTokenEnvVariable="OSIO_TOKEN";
-String multiTenantCheServerVariable="MULTITENANT_CHE_TOKEN";
-String cheSingleTenantCheServerName="che";
-String cheSingleTenantCheServerRoute="che-server";
+import ceylon.logging {
+    Priority
+}
+import ceylon.time {
+    systemTime
+}
+import io.fabric8.tenant.che.migration.workspaces {
+    logSettings
+}
 
 "Run the module `io.fabric8.tenant.che.migration.namespace`."
 suppressWarnings("expressionTypeNothing")
 shared void run() {
-    print("start");
-    value keycloakToken = process.environmentVariableValue(osioTokenEnvVariable);
-    value destinationCheServer = process.environmentVariableValue(multiTenantCheServerVariable);
-/*
-    if(! exists keycloakToken) {
-        process.exit(1);
-        return;
-    }
-    if(! exists destinationCheServer) {
-        process.exit(1);
-        return;
-    }
-*/
-    String singleTenantCheServer;
-    
-    try(oc = DefaultOpenShiftClient()) {
-        value cheServerDeploymentConfig = { *oc.deploymentConfigs().list().items }
-            .find((dc) => dc.metadata.name == cheSingleTenantCheServerName);
-        
-        if (! exists cheServerDeploymentConfig) {
-            // Nothing to do
-            process.exit(0);
-            return;
+    value identityId = env.identityId;
+    value requestId = env.requestId;
+
+    function logToJson(Priority p, String m, Throwable? t) {
+        variable String stacktrace = "";
+        if (exists t) {
+            printStackTrace(t, (st) { stacktrace += st; });
         }
-        
-        value cheServerRoute = { *oc.routes().list().items }
-            .find((route) => route.metadata.name == cheSingleTenantCheServerRoute);
-            
-        if (! exists cheServerRoute) {
-            // user tenant is not in a consistent state.
-            // We should reset his environment in single-tenant mode
-            // before retrying the migration.
-            process.exit(1);
-            return;
-        }
-        
-        value spec= cheServerRoute.spec;
-        singleTenantCheServer =
-            "http`` if (spec.tls exists) then "s" else "" ``://``spec.host``";
+        return Object({
+            "timestamp" -> systemTime.milliseconds(),
+            "logger_name" -> "fabric8-tenant-che-migration",
+            "message" -> m,
+            "priority" -> p.string,
+            if (! stacktrace.empty) then "stack_trace" -> stacktrace else null,
+            if (exists id = identityId) then "identity_id" -> id else null,
+            if (exists id = requestId) then "req_id" -> id else null
+        }.coalesced).string;
     }
-    
-    value workspaceMigrationArguments = [
-        "--token=``keycloakToken else "null"``",
-        "--source=``singleTenantCheServer ``",
-        "--destination``destinationCheServer else "null"``",
-        "--ignore-existing"
-    ];
-        
-    print(workspaceMigrationArguments);
+    logSettings.format = logToJson;
+
+    variable Integer exitCode;
+    try {
+        exitCode = doMigration();
+    } catch(Exception e) {
+        e.printStackTrace();
+        exitCode = 1;
+    } finally {
+        cleanMigrationResources();
+    }
+    process.exit(exitCode);
 }

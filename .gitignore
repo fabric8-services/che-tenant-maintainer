@@ -4,3 +4,4 @@
 /io.fabric8.tenant.che.migration.workspaces-*-swarm.jar
 /.settings/
 /.ceylon/config~
+/.idea/libraries/Ceylon__*.xml

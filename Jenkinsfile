@@ -1,108 +1,101 @@
 #!/usr/bin/groovy
+
 @Library('github.com/fabric8io/fabric8-pipeline-library@master')
+import io.fabric8.Fabric8Commands
+
 def utils = new io.fabric8.Utils()
+
 clientsNode{
   def envStage = utils.environmentNamespace('stage')
   def newVersion = ''
+  def resourceName = utils.getRepoName()
 
   checkout scm
   stage('Build Release')
   echo 'NOTE: running pipelines for the first time will take longer as build and base docker images are pulled onto the node'
 
-  newVersion = performCanaryRelease {}
 
-  def rc = """
-    {
-      "apiVersion" : "v1",
-      "kind" : "Template",
-      "labels" : { },
-      "metadata" : {
-        "annotations" : {
-          "description" : "${config.label} example",
-          "fabric8.${env.JOB_NAME}/iconUrl" : "${config.icon}"
-        },
-        "labels" : { },
-        "name" : "${env.JOB_NAME}"
-      },
-      "objects" : [{
-        "kind": "ReplicationController",
-        "apiVersion": "v1",
-        "metadata": {
-            "name": "${env.JOB_NAME}",
-            "generation": 1,
-            "creationTimestamp": null,
-            "labels": {
-                "component": "${env.JOB_NAME}",
-                "container": "${fabric8-tenant-migration}",
-                "group": "fabric8",
-                "project": "${env.JOB_NAME}",
-                "provider": "fabric8",
-                "expose": "true",
-                "version": "${newVersion}"
-            },
-            "annotations": {
-                "fabric8.${env.JOB_NAME}/iconUrl" : "${config.icon}"
-            }
-        },
-        "spec": {
-            "replicas": 1,
-            "selector": {
-                "component": "${env.JOB_NAME}",
-                "container": "${config.label}",
-                "group": "fabric8",
-                "project": "${env.JOB_NAME}",
-                "provider": "fabric8",
-                "version": "${newVersion}"
-            },
-            "template": {
-                "metadata": {
-                    "creationTimestamp": null,
-                    "labels": {
-                        "component": "${env.JOB_NAME}",
-                        "container": "${fabric8-tenant-migration}",
-                        "group": "fabric8",
-                        "project": "${env.JOB_NAME}",
-                        "provider": "fabric8",
-                        "version": "${newVersion}"
-                    }
-                },
-                "spec": {
-                    "containers": [
-                        {
-                            "name": "${env.JOB_NAME}",
-                            "image": "${env.FABRIC8_DOCKER_REGISTRY_SERVICE_HOST}:${env.FABRIC8_DOCKER_REGISTRY_SERVICE_PORT}/${env.KUBERNETES_NAMESPACE}/${env.JOB_NAME}:${newVersion}",
-                            "ports": ],
-                            "env": [
-                                {
-                                    "name": "KUBERNETES_NAMESPACE",
-                                    "valueFrom": {
-                                        "fieldRef": {
-                                            "apiVersion": "v1",
-                                            "fieldPath": "metadata.namespace"
-                                        }
-                                    }
-                                }
-                            ],
-                            "resources": {},
-                            "terminationMessagePath": "/dev/termination-log",
-                            "imagePullPolicy": "IfNotPresent",
-                            "securityContext": {}
-                        }
-                    ],
-                    "restartPolicy": "OnFailure",
-                    "terminationGracePeriodSeconds": 30,
-                    "dnsPolicy": "ClusterFirst",
-                    "securityContext": {}
-                }
-            }
-        },
-        "status": {
-            "replicas": 1
-        }
-    }]}
-    """
+  container('clients') {
+    if (newVersion == '') {
+        newVersion = getNewVersion {}
+    }
+
+    env.setProperty('VERSION', newVersion)
+
+    def flow = new Fabric8Commands()
+    if (flow.isOpenShift()) {
+        def ns = utils.namespace
+        def is = """
+apiVersion: v1
+kind: ImageStream
+metadata:
+  name: ${resourceName}
+  namespace: ${ns}
+"""
+        def bc = """
+apiVersion: v1
+kind: BuildConfig
+metadata:
+  name: ${resourceName}-s2i
+  namespace: ${ns}
+spec:
+  output:
+    to:
+      kind: ImageStreamTag
+      name: ${resourceName}:${newVersion}
+  resources:
+    limits:
+      memory: '1024Mi'
+  runPolicy: Serial
+  source:
+    type: Binary
+  strategy:
+    sourceStrategy:
+      env:
+        - name: ADD_REST_ENDPOINTS
+          value: 'true'
+        - name: JAVA_TOOL_OPTIONS
+          value: '-Xmx800m'
+      from:
+        kind: "DockerImage"
+        name: "ceylon/s2i-ceylon:1.3.3-jre8"
+"""    
+    
+        sh "oc delete is ${resourceName} -n ${ns} || true"
+        kubernetesApply(file: is, environment: ns)
+        kubernetesApply(file: bc, environment: ns)
+        sh "oc start-build ${resourceName}-s2i --from-dir ./ --follow -n ${ns}"
+    } else {
+        echo 'NOTE: Not on Openshift: do nothing since it is not implemented for now'
+    }
+  }
 
   stage('Rollout to Stage')
-  def envStage = environmentNamespace("stage")
-  kubernetesApply(file: rc, environment: envStage)
+  def migrationImage = "${resourceName}:${newVersion}"
+  def isSha = utils.getImageStreamSha(resourceName)
+  def ns = utils.namespace
+
+  def isForDeployment = """
+apiVersion: v1
+kind: ImageStream
+metadata:
+  name: ${resourceName}
+spec:
+  tags:
+  - from:
+      kind: ImageStreamImage
+      name: ${resourceName}@${isSha}
+      namespace: ${utils.getNamespace()}
+    name: ${newVersion}
+"""
+  echo "About to apply the following to openshift: ${isForDeployment}"
+  kubernetesApply(file: isForDeployment, environment: envStage)
+
+  def migrationCM = sh(returnStdout: true, script: "oc process -f migration-cm.yml")
+  echo "About to apply the following to openshift: ${migrationCM}"
+  kubernetesApply(file: migrationCM, environment: envStage)
+
+  def deployment = sh(returnStdout: true, script: "oc process -f migration-endpoints.yml -v IMAGE=\"${migrationImage}\" -v IMAGE_NAMESPACE_PREFIX=\"\" -v VERSION=\"${newVersion}\"")
+  echo "About to apply the following to openshift: ${deployment}"
+  kubernetesApply(file: deployment, environment: envStage)
 }

@@ -6,13 +6,8 @@ set -x
 # Exit on error
 set -e
 
-REGISTRY="push.registry.devshift.net"
-
-function tag_push() {
-  TARGET=$1
-  docker tag f8tenant-che-migration-deploy $TARGET
-  docker push $TARGET
-}
+REGISTRY=${REGISTRY:-"push.registry.devshift.net"}
+NAMESPACE=${NAMESPACE:-"fabric8-services"}
 
 # Source environment variables of the jenkins slave
 # that might interest this worker.
@@ -42,20 +37,17 @@ yum -y install \
    docker \
    make \
    git \
-   curl
+   curl \
+   go
 
-# Build the Wildfly Swarm application
-./build.sh
-
-service docker start
+go get github.com/openshift/source-to-image/cmd/s2i
 
 load_jenkins_vars
 TAG=$(echo $GIT_COMMIT | cut -c1-${DEVSHIFT_TAG_LEN})
 
-docker build -t f8tenant-che-migration-deploy -f Dockerfile .
-
+service docker start
 login
-tag_push ${REGISTRY}/fabric8-services/fabric8-tenant-che-migration:$TAG
-tag_push ${REGISTRY}/fabric8-services/fabric8-tenant-che-migration:latest
+
+./buildAndPushToDocker.sh
 
 echo 'CICO: Image pushed, ready to update deployed app'

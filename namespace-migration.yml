@@ -1,0 +1,62 @@
+apiVersion: v1
+kind: Template
+metadata:
+  name: fabric8-tenant-che-migration-endpoints-template
+objects:
+- apiVersion: v1
+  kind: Pod
+  metadata:
+    name: fabric8-tenant-che-migration-${POD_ID}
+    labels:
+      group: io.fabric8.tenant.apps
+      provider: fabric8
+      version: ${VERSION}
+  spec:
+    containers:
+    - name: migration
+      env:
+      - name: DEBUG
+        value: ${DEBUG}
+      - name: CLEANUP_SINGLE_TENANT
+        value: ${CLEANUP_SINGLE_TENANT}
+      - name: CHE_MULTITENANT_SERVER
+        valueFrom:
+          configMapKeyRef:
+            key: che-multitenant-server
+            name: migration
+      - name: OSIO_TOKEN
+        valueFrom:
+          configMapKeyRef:
+            key: osio-token
+            name: migration
+      - name: IDENTITY_ID
+        valueFrom:
+          configMapKeyRef:
+            key: identity-id
+            name: migration
+      - name: REQUEST_ID
+        valueFrom:
+          configMapKeyRef:
+            key: request-id
+            name: migration
+      image: ${IMAGE}
+      imagePullPolicy: "Always"
+    restartPolicy: Never
+    serviceAccount: che
+parameters:
+- description: Version
+  name: VERSION
+  value: latest
+- description: The container image
+  name: IMAGE
+  value: "docker.io/dfestal/fabric8-tenant-che-migration:latest"
+- description: If we should cleanup single resources after migration
+  name: CLEANUP_SINGLE_TENANT
+  value: "true"
+- description: Add DEBUG logs
+  name: DEBUG
+  value: "false"
+- description: Migration Pod ID
+  name: POD_ID
+  generate: expression
+  from: "[a-z0-9]{12}"
