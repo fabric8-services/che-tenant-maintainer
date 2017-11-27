@@ -17,3 +17,4 @@ objects:
 parameters:
 - description: Osio Token
   name: OSIO_TOKEN
+  value: ""
