@@ -41,7 +41,7 @@ yum -y install \
    go
 
 go get github.com/openshift/source-to-image/cmd/s2i
-ln ~/go/bin/s2i
+export PATH=${PATH}:~/go/bin
 
 load_jenkins_vars
 TAG=$(echo $GIT_COMMIT | cut -c1-${DEVSHIFT_TAG_LEN})
