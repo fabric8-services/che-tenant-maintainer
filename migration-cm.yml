@@ -24,6 +24,6 @@ parameters:
 - description: Request ID
   name: REQUEST_ID
   value: "theRequestId"
-- description: If we should cleanup single resources after migration
+- description: Base URL of the destination multi-tenant Che server
   name: CHE_MULTITENANT_SERVER
   value: 'https://che-dfestal-che.glusterpoc37aws.devshift.net'
