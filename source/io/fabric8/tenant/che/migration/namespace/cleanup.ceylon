@@ -1,30 +1,31 @@
-import io.fabric8.openshift.client {
-    DefaultOpenShiftClient
-}
-import  io.fabric8.openshift.api.model {
-    Route,
-    DeploymentConfig
-}
 import io.fabric8.kubernetes.api.model {
     ConfigMap,
     Service,
     HasMetadata,
     Pod
 }
-import io.fabric8.tenant.che.migration.workspaces {
-    log
-}
 import io.fabric8.kubernetes.api.model.extensions {
     Deployment,
     ReplicaSet
 }
+import io.fabric8.openshift.api.model {
+    Route,
+    DeploymentConfig
+}
+import io.fabric8.openshift.client {
+    DefaultOpenShiftClient
+}
+import io.fabric8.tenant.che.migration.workspaces {
+    log
+}
+
 import java.lang {
     Thread,
     InterruptedException,
-    JavaString = String
+    JavaString=String
 }
 import java.util {
-    JavaMap = Map
+    JavaMap=Map
 }
 
 Map<String, String> toCeylon(JavaMap<JavaString, JavaString> javaMap) =>
@@ -77,7 +78,7 @@ Boolean cleanSingleTenantCheServer() {
 
         log.info("Stopping the Che server in namespace `` namespace ``");
 
-        value cheServerDeploymentConfig =
+        value cheServerDeploymentConfig =>
                 oc.deploymentConfigs()
                     .inNamespace(namespace)
                     .withName(cheSingleTenantCheServerName);
@@ -88,7 +89,7 @@ Boolean cleanSingleTenantCheServer() {
 
         value timeoutMinutes = 2;
         try {
-            for(retry in 0:2*60) {
+            for(retry in 0:timeoutMinutes*60) {
                 if (cheServerPods.empty) {
                     break;
                 }
@@ -110,12 +111,12 @@ Boolean cleanSingleTenantCheServer() {
         log.info("Cleaning single-tenant OpenShift resources in namespace `` namespace ``");
 
         value resourceTypes = {
-            oc.deploymentConfigs(),
             oc.routes(),
             oc.services(),
             oc.extensions().deployments(),
             oc.extensions().replicaSets(),
-            oc.configMaps()
+            oc.configMaps(),
+            oc.deploymentConfigs()
         };
 
         resourceTypes
@@ -123,6 +124,23 @@ Boolean cleanSingleTenantCheServer() {
             .flatMap((list) => { *list } )
             .filter(shouldBeDeleted)
             .each(delete);
+
+        try {
+            for(retry in 0:timeoutMinutes*60) {
+                if (! cheServerDeploymentConfig?.get() exists) {
+                    break;
+                }
+                Thread.sleep(1000);
+            } else {
+                // timeout reached
+                log.error("Single-tenant Che server deployment config could not deleted, even after a `` timeoutMinutes `` minutes timeout");
+                return false;
+            }
+        } catch(InterruptedException ie) {
+            log.error("Interruped while waiting for the Che server pod termination", ie);
+            return false;
+        }
+
     }
     return true;
 }
