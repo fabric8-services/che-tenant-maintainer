@@ -5,11 +5,11 @@ metadata:
 objects:
 - apiVersion: v1
   data:
-    che-multitenant-server: 'https://che-dfestal-che.glusterpoc37aws.devshift.net'
+    che-multitenant-server: ${CHE_MULTITENANT_SERVER}
     identity-id: theIdentity
     osio-token: ${OSIO_TOKEN}
-
-    request-id: theRequestId
+    request-id: ${REQUEST_ID}
+    cleanup-single-tenant: ${CLEANUP_SINGLE_TENANT}
   kind: ConfigMap
   metadata:
     name: migration
@@ -18,3 +18,12 @@ parameters:
 - description: Osio Token
   name: OSIO_TOKEN
   value: ""
+- description: If we should cleanup single resources after migration
+  name: CLEANUP_SINGLE_TENANT
+  value: "true"
+- description: Request ID
+  name: REQUEST_ID
+  value: "theRequestId"
+- description: If we should cleanup single resources after migration
+  name: CHE_MULTITENANT_SERVER
+  value: 'https://che-dfestal-che.glusterpoc37aws.devshift.net'
