@@ -6,7 +6,7 @@ objects:
 - apiVersion: v1
   data:
     debug: ${DEBUG}
-    java-tool-options: ${JAVA_TOOL_OPTIONS}
+    java-options: ${JAVA_OPTIONS}
   kind: ConfigMap
   metadata:
     name: migration-settings
@@ -15,6 +15,6 @@ parameters:
 - description: Add DEBUG logs
   name: DEBUG
   value: "false"
-- description: The default Java options to add to the command
-  name: JAVA_TOOL_OPTIONS
+- description: The Java options to run the migration with
+  name: JAVA_OPTIONS
   value: ""

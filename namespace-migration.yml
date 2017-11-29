@@ -25,10 +25,10 @@ objects:
         containers:
         - name: migration
           env:
-          - name: JAVA_TOOL_OPTIONS
+          - name: JAVA_OPTS
             valueFrom:
               configMapKeyRef:
-                key: java-tool-options
+                key: java-options
                 name: migration-settings
                 optional: true
           - name: DEBUG
