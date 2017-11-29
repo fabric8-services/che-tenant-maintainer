@@ -1,3 +1,8 @@
+import ceylon.file {
+    parsePath,
+    File,
+    Nil
+}
 import ceylon.json {
     Object
 }
@@ -7,8 +12,17 @@ import ceylon.logging {
 import ceylon.time {
     systemTime
 }
+
+import io.fabric8.kubernetes.api.model {
+    PodBuilder,
+    Pod
+}
+import io.fabric8.openshift.client {
+    DefaultOpenShiftClient
+}
 import io.fabric8.tenant.che.migration.workspaces {
-    logSettings
+    logSettings,
+    log
 }
 
 "Run the module `io.fabric8.tenant.che.migration.namespace`."
@@ -37,11 +51,53 @@ shared void run() {
     variable Integer exitCode;
     try {
         exitCode = doMigration();
-    } catch(Exception e) {
+        writeTerminationStatus(exitCode);
+//        if (exists requestId) {
+//            addJobLabel(requestId, "success", (exitCode == 0).string);
+//        }
+    } catch(Throwable e) {
         e.printStackTrace();
-        exitCode = 1;
     } finally {
         cleanMigrationResources();
     }
-    process.exit(exitCode);
+    process.exit(0);
+}
+
+void writeTerminationStatus(Integer exitCode) {
+    value logFile = switch(resource = parsePath("/dev/termination-log").resource)
+    case (is Nil) resource.createFile()
+    case (is File) resource
+    else null;
+    if (exists logFile) {
+        try (appender = logFile.Appender()) {
+            appender.write(exitCode.string);
+        }
+    }
+}
+
+void addJobLabel(String requestId, String labelName, String labelValue) {
+    try(oc = DefaultOpenShiftClient()) {
+
+        value namespace = osioCheNamespace(oc);
+
+        function containsRequestId(Pod pod) => toCeylon(pod.metadata.annotations)
+            .contains("request-id" -> requestId);
+
+        void patch(Pod pod) {
+            oc.pods()
+            .withName(pod.metadata.name)
+            .patch(PodBuilder(pod).editMetadata().addToLabels(labelName, labelValue).endMetadata().build());
+        }
+
+        value migrationPods = oc.pods().inNamespace(namespace).withLabel("migration").list().items;
+
+        for (pod in migrationPods) {
+            if (containsRequestId(pod)) {
+                patch(pod);
+            }
+        }
+
+    } catch(Exception e) {
+        log.warn("Exception while adding the success label to the migration job and pod", e);
+    }
 }
