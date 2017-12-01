@@ -48,6 +48,12 @@ shared void run() {
     }
     logSettings.format = logToJson;
 
+    if (! requestId exists) {
+        log.warn("REQUEST_ID doesn't exit. The config map is probably missing. Let's skip this migration without failing");
+        writeTerminationStatus(0);
+        process.exit(0);
+    }
+
     variable Integer exitCode;
     try {
         exitCode = doMigration();
@@ -56,7 +62,7 @@ shared void run() {
 //            addJobLabel(requestId, "success", (exitCode == 0).string);
 //        }
     } catch(Throwable e) {
-        e.printStackTrace();
+        log.error("Unknown error during namespace migration", e);
     } finally {
         cleanMigrationResources();
     }
