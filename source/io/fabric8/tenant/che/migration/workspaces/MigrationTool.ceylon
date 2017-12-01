@@ -77,8 +77,8 @@ class MigrationTool(
     
 ) {
     value httpClient = OkHttpClient.Builder()
-        .connectTimeout(2, TimeUnit.minutes)
-        .readTimeout(2, TimeUnit.minutes)
+        .connectTimeout(30, TimeUnit.seconds)
+        .readTimeout(30, TimeUnit.seconds)
         .build();
 
     function authorization(String keycloakToken) => ["Authorization", "Bearer ``keycloakToken``"];
