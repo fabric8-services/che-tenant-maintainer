@@ -13,6 +13,13 @@ import ceylon.logging {
 import java.lang {
     Thread
 }
+import io.fabric8.openshift.client.dsl {
+    DeployableScalableResource
+}
+import io.fabric8.openshift.api.model {
+    DeploymentConfig,
+    DoneableDeploymentConfig
+}
 
 Integer doMigration(String? debugLogsParam = null, String? cleanupSingleTenantParam = null) {
     logSettings.reset();
@@ -25,20 +32,37 @@ Integer doMigration(String? debugLogsParam = null, String? cleanupSingleTenantPa
     value keycloakToken = env.osioToken;
     value destinationCheServer = env.multiTenantCheServer;
     String singleTenantCheServer;
+
+    alias DeploymentConfigResource => DeployableScalableResource<DeploymentConfig,DoneableDeploymentConfig>;
+
+    DeploymentConfigResource getCheServerDeploymentConfig(DefaultOpenShiftClient oc, String namespace) =>
+            oc.deploymentConfigs()
+                .inNamespace(namespace)
+                .withName(cheSingleTenantCheServerName);
+
+    function serverCleaned(DeploymentConfigResource? deploymentConfig) => ! deploymentConfig?.get() exists;
+
     try(oc = DefaultOpenShiftClient()) {
         value namespace = osioCheNamespace(oc);
         try {
-            value cheServerDeploymentConfig =
-                    oc.deploymentConfigs()
-                        .inNamespace(namespace)
-                        .withName(cheSingleTenantCheServerName);
+            value cheServerDeploymentConfig = getCheServerDeploymentConfig(oc, namespace);
 
-            if (! cheServerDeploymentConfig?.get() exists) {
+            value shouldSkipMigration => serverCleaned(cheServerDeploymentConfig);
+
+            if (shouldSkipMigration) {
                 log.info("Migration skipped (no more Che server)");
                 return 0;
             }
 
-            cheServerDeploymentConfig.scale(1, true);
+            try {
+                cheServerDeploymentConfig.scale(1, true);
+            } catch(Exception e) {
+                if (shouldSkipMigration) {
+                    log.info("Migration skipped (no more Che server)");
+                    return 0;
+                }
+                throw e;
+            }
 
             value cheServerPods => { *oc.pods().withLabel("deploymentconfig", "che").list().items};
             value podReady => if (exists ready = cheServerPods.first
@@ -52,6 +76,10 @@ Integer doMigration(String? debugLogsParam = null, String? cleanupSingleTenantPa
                     if(podReady) {
                         break;
                     }
+                    if (shouldSkipMigration) {
+                        log.info("Migration skipped (no more Che server)");
+                        return 0;
+                    }
                     Thread.sleep(1000);
                 } else {
                     log.error("Single-tenant Che server could not be started even after a ``timeoutMinutes`` minutes in namespace '`` namespace ``'");
@@ -63,6 +91,10 @@ Integer doMigration(String? debugLogsParam = null, String? cleanupSingleTenantPa
             value cheServerRouteOperation = oc.routes().withName(cheSingleTenantCheServerRoute);
             value cheServerRoute = cheServerRouteOperation?.get();
             if (! exists cheServerRoute) {
+                if (shouldSkipMigration) {
+                    log.info("Migration skipped (no more Che server)");
+                    return 0;
+                }
                 // user tenant is not in a consistent state.
                 // We should reset his environment in single-tenant mode
                 // before retrying the migration.
@@ -95,6 +127,16 @@ Integer doMigration(String? debugLogsParam = null, String? cleanupSingleTenantPa
 
     value status = migrateWorkspaces(*args);
     if (!status.successful()) {
+        if (serverCleaned {
+            value deploymentConfig {
+                try (oc = DefaultOpenShiftClient()) {
+                    return getCheServerDeploymentConfig(oc, osioCheNamespace(oc));
+                }
+            }
+        }) {
+            log.info("Migration skipped because it was probably already done by a previous migration Job");
+            return 0;
+        }
         log.error(status.string);
         return 1;
     }

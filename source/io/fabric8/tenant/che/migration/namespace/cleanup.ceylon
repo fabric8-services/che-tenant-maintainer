@@ -111,12 +111,12 @@ Boolean cleanSingleTenantCheServer() {
         log.info("Cleaning single-tenant OpenShift resources in namespace `` namespace ``");
 
         value resourceTypes = {
-            oc.routes(),
+            oc.deploymentConfigs(),
             oc.services(),
             oc.extensions().deployments(),
             oc.extensions().replicaSets(),
             oc.configMaps(),
-            oc.deploymentConfigs()
+            oc.routes()
         };
 
         resourceTypes
