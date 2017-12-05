@@ -44,6 +44,30 @@ Integer doMigration(String? debugLogsParam = null, String? cleanupSingleTenantPa
 
     try(oc = DefaultOpenShiftClient()) {
         value namespace = osioCheNamespace(oc);
+
+        value lockResources = oc.configMaps().inNamespace(namespace).withName("migration-lock");
+        if(lockResources.get() exists) {
+            log.info("A previous migration Job is already running. Waiting for it to finish...");
+        }
+
+        variable value timeoutMinutes = 10;
+        for(retry in 0:timeoutMinutes*60) {
+            if(! lockResources.get() exists) {
+                try {
+                    if (lockResources.createNew().withNewMetadata().withName("migration-lock").endMetadata().done() exists) {
+                        break;
+                    }
+                } catch(Exception e) {
+                    log.warn("Exception when trying to create the lock config map", e);
+                }
+            }
+            Thread.sleep(1000);
+        } else {
+            log.error("The migration lock is still owned, even after a ``timeoutMinutes`` minutes in namespace '`` namespace ``'
+                       It might be necessary to remove the 'migration-lock' config map manually.");
+            return 1;
+        }
+
         try {
             value cheServerDeploymentConfig = getCheServerDeploymentConfig(oc, namespace);
 
@@ -71,7 +95,7 @@ Integer doMigration(String? debugLogsParam = null, String? cleanupSingleTenantPa
 
             if (!podReady) {
                 log.info("Starting the single-tenant Che server...");
-                value timeoutMinutes = 5;
+                timeoutMinutes = 5;
                 for(retry in 0:timeoutMinutes*60) {
                     if(podReady) {
                         break;
@@ -107,42 +131,41 @@ Integer doMigration(String? debugLogsParam = null, String? cleanupSingleTenantPa
             singleTenantCheServer =
                     "http`` if (spec.tls exists) then "s" else "" ``://``spec.host``";
 
+            value args = {
+                "source"-> singleTenantCheServer,
+                "token"-> keycloakToken,
+                "destination"-> destinationCheServer,
+                "ignore-existing"-> "true",
+                if(debugLogs) "log-level" -> "DEBUG"
+            }.map((name -> val)=> if (exists val) then "--``name``=``val``" else null)
+                .coalesced
+                .sequence();
+
+            log.debug("Calling workspace migration utility with the following arguments:\n`` args ``");
+
+            value status = migrateWorkspaces(*args);
+            if (!status.successful()) {
+                if (serverCleaned {
+                    value deploymentConfig {
+                        return getCheServerDeploymentConfig(oc, namespace);
+                    }
+                }) {
+                    log.info("Migration skipped because it was probably already done by a previous migration Job");
+                    return 0;
+                }
+                log.error(status.string);
+                return 1;
+            }
+
+            if (cleanupSingleTenant && ! cleanSingleTenantCheServer()) {
+                return 1;
+            }
         } catch(Exception e){
             log.error("Unexpected exception while migrating namespace `` namespace ``", e);
             return 1;
+        } finally {
+            lockResources.delete();
         }
-    }
-
-    value args = {
-        "source"-> singleTenantCheServer,
-        "token"-> keycloakToken,
-        "destination"-> destinationCheServer,
-        "ignore-existing"-> "true",
-        if(debugLogs) "log-level" -> "DEBUG"
-    }.map((name -> val)=> if (exists val) then "--``name``=``val``" else null)
-        .coalesced
-        .sequence();
-
-    log.debug("Calling workspace migration utility with the following arguments:\n`` args ``");
-
-    value status = migrateWorkspaces(*args);
-    if (!status.successful()) {
-        if (serverCleaned {
-            value deploymentConfig {
-                try (oc = DefaultOpenShiftClient()) {
-                    return getCheServerDeploymentConfig(oc, osioCheNamespace(oc));
-                }
-            }
-        }) {
-            log.info("Migration skipped because it was probably already done by a previous migration Job");
-            return 0;
-        }
-        log.error(status.string);
-        return 1;
-    }
-
-    if (cleanupSingleTenant && ! cleanSingleTenantCheServer()) {
-        return 1;
     }
     return 0;
 }

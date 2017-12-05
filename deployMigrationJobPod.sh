@@ -16,10 +16,10 @@ oc process -f migration-cm.yml \
     -p CLEANUP_SINGLE_TENANT="${CLEANUP_SINGLE_TENANT}" \
     -p CHE_MULTITENANT_SERVER="${CHE_MULTITENANT_SERVER}" \
     -p REQUEST_ID="${REQUEST_ID}" \
-    | oc apply --force -f -
+    | oc apply --overwrite=true --force -f -
 
 
 oc process -f namespace-migration.yml \
     -p IMAGE="${MIGRATION_IMAGE}" \
     -p REQUEST_ID="${REQUEST_ID}" \
-    | oc apply --force -f -
+    | oc apply --overwrite=true --force -f -

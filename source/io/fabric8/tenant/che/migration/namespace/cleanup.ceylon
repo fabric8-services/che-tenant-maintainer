@@ -145,9 +145,11 @@ Boolean cleanSingleTenantCheServer() {
     return true;
 }
 
-void cleanMigrationResources() {
+void cleanMigrationResources(String jobRequestId) {
     try(oc = DefaultOpenShiftClient()) {
-        if (exists configMap = oc.configMaps().inNamespace(osioCheNamespace(oc)).withName("migration").get()) {
+        if (exists configMap = oc.configMaps().inNamespace(osioCheNamespace(oc)).withName("migration").get(),
+            exists reqId = configMap.data.get(JavaString("request-id"))?.string,
+            reqId == jobRequestId) {
             oc.resource(configMap).delete();
         }
     } catch(Exception e) {

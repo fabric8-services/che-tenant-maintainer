@@ -67,6 +67,8 @@ objects:
                 key: request-id
                 name: migration
                 optional: true
+          - name: JOB_REQUEST_ID
+            value: ${REQUEST_ID}
           image: ${IMAGE}
           imagePullPolicy: "Always"
         restartPolicy: Never

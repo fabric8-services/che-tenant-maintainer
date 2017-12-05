@@ -30,6 +30,7 @@ suppressWarnings("expressionTypeNothing")
 shared void run() {
     value identityId = env.identityId;
     value requestId = env.requestId;
+    value jobRequestId = env.jobRequestId;
 
     function logToJson(Priority p, String m, Throwable? t) {
         variable String stacktrace = "";
@@ -48,8 +49,22 @@ shared void run() {
     }
     logSettings.format = logToJson;
 
-    if (! requestId exists) {
-        log.warn("REQUEST_ID doesn't exit. The config map is probably missing. Let's skip this migration without failing");
+    if (! exists jobRequestId ) {
+        log.error("JOB_REQUEST_ID doesn't exit. The migration should be started with a REQUEST_ID");
+        writeTerminationStatus(1);
+        process.exit(0);
+        return;
+    }
+
+    if (! exists requestId) {
+        log.warn("REQUEST_ID doesn't exit. The config map is probably missing. Let's skip this migration without failing since it should be performed by another Job");
+        writeTerminationStatus(0);
+        process.exit(0);
+        return;
+    }
+
+    if (requestId != jobRequestId) {
+        log.warn("This Job request id ('``jobRequestId  ``') doesn't match the config map request id ('`` requestId ``'). Let's skip this migration without failing since it should be performed by another Job");
         writeTerminationStatus(0);
         process.exit(0);
     }
@@ -64,7 +79,7 @@ shared void run() {
     } catch(Throwable e) {
         log.error("Unknown error during namespace migration", e);
     } finally {
-        cleanMigrationResources();
+        cleanMigrationResources(jobRequestId);
     }
     process.exit(0);
 }

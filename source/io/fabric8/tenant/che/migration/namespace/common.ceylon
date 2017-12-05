@@ -14,6 +14,7 @@ object env {
     shared String? cheNamespace = get("CHE_NAMESPACE");
     shared String? debugLogs = get("DEBUG");
     shared String? cleanupSingleTenant = get("CLEANUP_SINGLE_TENANT");
+    shared String? jobRequestId = get("JOB_REQUEST_ID");
 }
 String cheSingleTenantCheServerName="che";
 String cheSingleTenantCheServerRoute="che";
