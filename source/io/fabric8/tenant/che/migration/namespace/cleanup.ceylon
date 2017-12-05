@@ -140,7 +140,6 @@ Boolean cleanSingleTenantCheServer() {
             log.error("Interruped while waiting for the Che server pod termination", ie);
             return false;
         }
-
     }
     return true;
 }

@@ -63,11 +63,11 @@ shared void run() {
         return;
     }
 
-    if (requestId != jobRequestId) {
-        log.warn("This Job request id ('``jobRequestId  ``') doesn't match the config map request id ('`` requestId ``'). Let's skip this migration without failing since it should be performed by another Job");
-        writeTerminationStatus(0);
-        process.exit(0);
-    }
+//    if (requestId != jobRequestId) {
+//        log.warn("This Job request id ('``jobRequestId  ``') doesn't match the config map request id ('`` requestId ``'). Let's skip this migration without failing since it should be performed by another Job");
+//        writeTerminationStatus(0);
+//        process.exit(0);
+//    }
 
     variable Integer exitCode;
     try {
