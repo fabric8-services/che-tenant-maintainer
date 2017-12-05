@@ -13,11 +13,7 @@ shared class NamespaceEndpoint() {
     get
     produces {MediaType.applicationJson}
     shared Integer migrate(queryParam("debug") String? debug = null) {
-        try {
-            return doMigration(debug);
-        } finally {
-            cleanMigrationResources();
-        }
+        return doMigration(debug);
     }
 
     get
