@@ -28,8 +28,14 @@ import java.util {
     JavaMap=Map
 }
 
-Map<String, String> toCeylon(JavaMap<JavaString, JavaString> javaMap) =>
-        map { for (e in javaMap.entrySet()) e.key.string -> e.\ivalue.string };
+Map<String, String> toCeylon(JavaMap<JavaString, JavaString>? javaMap) =>
+        if(exists javaMap)
+        then map {
+            for (e in javaMap.entrySet())
+                if(exists key = e.key, exists item = e.\ivalue)
+                    key.string -> item.string
+        }
+        else map {};
 
 Boolean isCheServerPod(Pod pod)
         => toCeylon(pod.metadata.labels).containsEvery {
