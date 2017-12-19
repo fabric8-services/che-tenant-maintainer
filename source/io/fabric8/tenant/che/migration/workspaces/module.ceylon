@@ -8,4 +8,5 @@ module io.fabric8.tenant.che.migration.workspaces "1.0.0" {
     import fr.minibilles.cli "0.2.1";
     shared import ceylon.logging "1.3.3";
     shared import java.base "8";
+    import maven:"org.slf4j:slf4j-nop" "1.7.13";
 }
