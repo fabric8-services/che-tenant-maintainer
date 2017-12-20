@@ -30,6 +30,9 @@ import java.util.concurrent {
 import java.lang {
     Thread
 }
+import java.net {
+    SocketTimeoutException
+}
 
 String exitCodes => "Possible exit codes:\n\n" +
     "\n".join(Status.statuses.sort(byKey(increasing<Integer>))
@@ -121,6 +124,10 @@ class MigrationTool(
                     else {
                         return Status.unexpectedErrorInSourceCheServer(response);
                     }
+                } catch(SocketTimeoutException e) {
+                    log.info("SocketTimeout exception when trying to access to the Single-tenant Che server. Retrying ...");
+                    // Wait 1 second and retry
+                    Thread.sleep(1000);
                 }
             } else {
                 log.error("Single-tenant Che server not accessible even after ``timeoutMinutes`` minutes at '`` sourceEndpoint ``'");
