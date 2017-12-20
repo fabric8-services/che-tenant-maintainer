@@ -95,103 +95,109 @@ class MigrationTool(
         .url(endpoint));
 
     shared Status run() {
-        value endpointPath = "/wsmaster/api/workspace";
-        value sourceEndpoint = sourceCheServer + endpointPath;
-        value destinationEndpoint = destinationCheServer + endpointPath;
-
-        log.debug(() => "Retrieving the list of workspaces from URL : `` sourceEndpoint `` ...");
-
-        JsonValue workspaces;
-
-        String? responseContents;
-        value timeoutMinutes = 2;
-        for(retry in 0:timeoutMinutes*60) {
-            try (response = get(sourceEndpoint)) {
-                switch(response.code())
-                case(200) {
-                    responseContents = response.body()?.string_method();
-                    break;
-                }
-                case(503) {
-                    log.debug("Single-tenant Che server not accessible (error 503). Retrying ...");
-                    // Wait 1 second and retry
-                    Thread.sleep(1000);
-                }
-                else {
-                    return Status.unexpectedErrorInSourceCheServer(response);
-                }
-            }
-        } else {
-            log.error("Single-tenant Che server not accessible even after ``timeoutMinutes`` minutes at '`` sourceEndpoint ``'");
-            return Status.sourceCheServerNotAccessible;
-        }
-
-        if (!exists responseContents) {
-            return Status.invalidJsonInWorkspaceList("<null>");
-        }
-        if (responseContents.empty) {
-            return Status.invalidJsonInWorkspaceList("");
-        }
-
-        log.debug(() => "    => `` responseContents ``");
-
         try {
-            workspaces = parseJSON(responseContents);
-        } catch(Exception e) {
-            return Status.invalidJsonInWorkspaceList(responseContents);
-        }
-        if (! is JsonArray workspaces) {
-            return Status.invalidJsonInWorkspaceList(responseContents);
-        }
+            value endpointPath = "/wsmaster/api/workspace";
+            value sourceEndpoint = sourceCheServer + endpointPath;
+            value destinationEndpoint = destinationCheServer + endpointPath;
 
-        value initialState = [Status.success, []];
-        value [status, createdWorkspaces] = workspaces
+            log.debug(() => "Retrieving the list of workspaces from URL : `` sourceEndpoint `` ...");
+
+            JsonValue workspaces;
+
+            String? responseContents;
+            value timeoutMinutes = 2;
+            for(retry in 0:timeoutMinutes*60) {
+                try (response = get(sourceEndpoint)) {
+                    switch(response.code())
+                    case(200) {
+                        responseContents = response.body()?.string_method();
+                        break;
+                    }
+                    case(503) {
+                        log.debug("Single-tenant Che server not accessible (error 503). Retrying ...");
+                        // Wait 1 second and retry
+                        Thread.sleep(1000);
+                    }
+                    else {
+                        return Status.unexpectedErrorInSourceCheServer(response);
+                    }
+                }
+            } else {
+                log.error("Single-tenant Che server not accessible even after ``timeoutMinutes`` minutes at '`` sourceEndpoint ``'");
+                return Status.sourceCheServerNotAccessible;
+            }
+
+            if (!exists responseContents) {
+                return Status.invalidJsonInWorkspaceList("<null>");
+            }
+            if (responseContents.empty) {
+                return Status.invalidJsonInWorkspaceList("");
+            }
+
+            log.debug(() => "    => `` responseContents ``");
+
+            try {
+                workspaces = parseJSON(responseContents);
+            } catch(Exception e) {
+                return Status.invalidJsonInWorkspaceList(responseContents);
+            }
+            if (! is JsonArray workspaces) {
+                return Status.invalidJsonInWorkspaceList(responseContents);
+            }
+
+            value initialState = [Status.success, []];
+            value [status, createdWorkspaces] = workspaces
                 .narrow<JsonObject>()
                 .map((workspace) => workspace.get("config"))
                 .narrow<JsonObject>()
                 .fold<[Status, [String*]]>(initialState)((currentState, toCreate) {
-            
-            value [status, alreadyCreated] = currentState;
-            
-            if (! status.successful()) {
-                // Skip next workspaces since migration already failed
-                return currentState;
-            }
-            
-            value workspaceName = toCreate.getString("name");
-            
-            log.info(() => "Migration of workspace `` workspaceName ``");
-            log.debug(() => "    Workspace configuration to create:\n`` toCreate.pretty ``");
 
-            try (response = postJson(destinationEndpoint, toCreate.string)) {
+                value [status, alreadyCreated] = currentState;
 
-                switch(response.code())
-                case(201) {
-                    log.info(() => "    => OK");
-                    return [Status.success, [workspaceName, *alreadyCreated]];
+                if (! status.successful()) {
+                    // Skip next workspaces since migration already failed
+                    return currentState;
                 }
-                case(403) {
-                    return [Status.noRightToCreateNewWorkspace, alreadyCreated];
-                }
-                case(409) {
-                    if (! ignoreExisting) {
-                        return [Status.workspaceAlreadyExists(workspaceName), alreadyCreated];
+
+                value workspaceName = toCreate.getString("name");
+
+                log.info(() => "Migration of workspace `` workspaceName ``");
+                log.debug(() => "    Workspace configuration to create:\n`` toCreate.pretty ``");
+
+                try (response = postJson(destinationEndpoint, toCreate.string)) {
+
+                    switch(response.code())
+                    case(201) {
+                        log.info(() => "    => OK");
+                        return [Status.success, [workspaceName, *alreadyCreated]];
                     }
-                    log.info(() => "    => workspace already exists: Ignoring");
-                    return [Status.success, alreadyCreated];
+                    case(403) {
+                        return [Status.noRightToCreateNewWorkspace, alreadyCreated];
+                    }
+                    case(409) {
+                        if (! ignoreExisting) {
+                            return [Status.workspaceAlreadyExists(workspaceName), alreadyCreated];
+                        }
+                        log.info(() => "    => workspace already exists: Ignoring");
+                        return [Status.success, alreadyCreated];
+                    }
+                    else {
+                        return [Status.unexpectedErrorInDestinationCheServer(response), alreadyCreated];
+                    }
                 }
-                else {
-                    return [Status.unexpectedErrorInDestinationCheServer(response), alreadyCreated];
-                }
-            }
-        });
+            });
 
-        if (nonempty createdWorkspaces) {
-            log.info("Created workspaces: `` createdWorkspaces ``");
-        } else {
-            log.info("No workspaces created");
+            if (nonempty createdWorkspaces) {
+                log.info("Created workspaces: `` createdWorkspaces ``");
+            } else {
+                log.info("No workspaces created");
+            }
+            return status;
+        } catch(Exception e) {
+            value status = Status.unexpectedException(e);
+            log.error(status.description, e);
+            return status;
         }
-        return status;
     }
 }
 

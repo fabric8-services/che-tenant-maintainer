@@ -89,9 +89,12 @@ Integer doMigration(String? debugLogsParam = null, String? cleanupSingleTenantPa
             }
 
             value cheServerPods => { *oc.pods().withLabel("deploymentconfig", "che").list().items};
-            value podReady => if (exists ready = cheServerPods.first
-                        ?.status?.containerStatuses?.get(0)
-                        ?.ready?.booleanValue()) then ready else false;
+            value podReady =>
+                if (exists statuses = cheServerPods.first?.status?.containerStatuses,
+                    ! statuses.empty,
+                    exists ready = statuses.get(0)?.ready?.booleanValue())
+                then ready
+                else false;
 
             if (!podReady) {
                 log.info("Starting the single-tenant Che server...");
