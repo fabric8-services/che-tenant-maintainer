@@ -1,7 +1,9 @@
 import javax.ws.rs {
     path,
     get,
-    produces
+    produces,
+    consumes,
+    post
 }
 import javax.ws.rs.core {
     MediaType,
@@ -11,15 +13,24 @@ import javax.ws.rs.core {
 
 path("workspaces")
 shared class WorkspacesEndpoint() {
+    post
+    produces {MediaType.applicationJson}
+    consumes {MediaType.applicationJson}
+    shared Status post(String json) =>
+            doMigration (json).first;
+
     get
     produces {MediaType.applicationJson}
-    shared Status migrate(context UriInfo info) => doMigration (*[
+    shared Status get(context UriInfo info) => doMigration ([
         for (param in info.getQueryParameters(true).entrySet())
         "--``param.key``=``if (param.\ivalue.empty) then "" else param.\ivalue.get(0)``"
-    ]);
+    ]).first;
 
     get
     path("help")
     produces {MediaType.textPlain}
-    shared String help() => buildHelp();
+    shared String help() {
+        import fr.minibilles.cli { help }
+        return help<MigrationTool>("../workspaces endpoint");
+    }
 }

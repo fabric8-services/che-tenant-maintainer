@@ -5,7 +5,7 @@ MIGRATION_IMAGE=${MIGRATION_IMAGE:-"docker.io/dfestal/fabric8-tenant-che-migrati
 CLEANUP_SINGLE_TENANT=${CLEANUP_SINGLE_TENANT:-"true"}
 DEBUG=${DEBUG:-"false"}
 
-oc process -f migration-endpoints.yml \
+oc process -f endpoints.yml \
     -p IMAGE="${MIGRATION_IMAGE}" \
     -p VERSION="${MIGRATION_VERSION}" \
     -p CLEANUP_SINGLE_TENANT="${CLEANUP_SINGLE_TENANT}" \

@@ -17,12 +17,14 @@ shared class Status {
         7 -> "No right to create a new workspace in the destination Che server",
         8 -> "The workspace already exists in the destination Che server",
         9 -> "Log file cannot be written",
-        10 -> "Unexpected exception"
+        10 -> "Unexpected exception",
+        11 -> "The created workspace JSON response doesn't contain any Id"
     });
         
     shared Integer code;
     shared String description;
     shared String details;
+    shared variable String migratedWorkspaces = "";
 
     abstract new fromCode(Integer code) {
         this.code = code;
@@ -34,7 +36,7 @@ shared class Status {
     }
     
     shared new success extends fromCode(0) {
-        details = "\n" + "workspaces correctly migrated";
+        details = "\nWorkspaces successfully migrated";
     }
     
     shared new buildHelpShown extends fromCode(0) {
@@ -72,6 +74,10 @@ shared class Status {
 
     shared new unexpectedException(Exception exception) extends fromCode(10) {
         details = exception.string;
+    }
+
+    shared new noIdInCreatedWorkspace(Response response) extends fromCode(11) {
+        details = "\n" + dumpResponse(response);
     }
 
     string => "".join {

@@ -43,17 +43,17 @@ String exitCodes => "Possible exit codes:\n\n" +
  Fabric8 - Workspace Migration Tool
  
  This tool is used to migrate user workspaces
- from single-tenant Che to to Multi-tenant Che
+ from one source Che server to a destination Che server
  "
 additionalDoc(`value exitCodes`)
 info("Shows this help", "help", 'h')
-class MigrationTool(
+shared class MigrationTool(
 
-    "Url of the Che server that contains workspaces to migrate"
+    "Api endpoint Url of the Che server that contains workspaces to migrate"
     option("source", 's')
     shared String sourceCheServer,
 
-    "Url of the Che server that will receive migrated workspaces"
+    "Api endpoint Url of the Che server that will receive migrated workspaces"
     option("destination", 'd')
     shared String destinationCheServer,
     
@@ -76,8 +76,12 @@ class MigrationTool(
     
     "don't print any messages on standard outputs"
     option("qiet", 'q')
-    shared Boolean quiet = false
-    
+    shared Boolean quiet = false,
+
+    "relace expression to apply to the workspace definition
+     under the form comma-separated list of `initialString:finalString`"
+    option("replace")
+    shared String replace = ""
 ) {
     value httpClient = OkHttpClient.Builder()
         .connectTimeout(30, TimeUnit.seconds)
@@ -97,9 +101,21 @@ class MigrationTool(
         .post(RequestBody.create(contentType("application/json"), content))
         .url(endpoint));
 
-    shared Status run() {
+    function modifyWorkspaceJson(variable String json) {
+        for (rep in replace.split(','.equals)) {
+            value splitReplace = rep.split(':'.equals).sequence();
+            value oldValue = splitReplace[0];
+            value newValue = splitReplace[1];
+            if (exists newValue) {
+                json = json.replace(oldValue, newValue);
+            }
+        }
+        return json;
+    }
+
+    shared Status migrate() {
         try {
-            value endpointPath = "/wsmaster/api/workspace";
+            value endpointPath = "/workspace";
             value sourceEndpoint = sourceCheServer + endpointPath;
             value destinationEndpoint = destinationCheServer + endpointPath;
 
@@ -117,7 +133,7 @@ class MigrationTool(
                         break;
                     }
                     case(503) {
-                        log.debug("Single-tenant Che server not accessible (error 503). Retrying ...");
+                        log.debug("Source Che server not accessible (error 503). Retrying ...");
                         // Wait 1 second and retry
                         Thread.sleep(1000);
                     }
@@ -125,12 +141,12 @@ class MigrationTool(
                         return Status.unexpectedErrorInSourceCheServer(response);
                     }
                 } catch(SocketTimeoutException e) {
-                    log.info("SocketTimeout exception when trying to access to the Single-tenant Che server. Retrying ...");
+                    log.info("SocketTimeout exception when trying to access to the Source Che server. Retrying ...");
                     // Wait 1 second and retry
                     Thread.sleep(1000);
                 }
             } else {
-                log.error("Single-tenant Che server not accessible even after ``timeoutMinutes`` minutes at '`` sourceEndpoint ``'");
+                log.error("Source Che server not accessible even after ``timeoutMinutes`` minutes at '`` sourceEndpoint ``'");
                 return Status.sourceCheServerNotAccessible;
             }
 
@@ -157,7 +173,7 @@ class MigrationTool(
                 .narrow<JsonObject>()
                 .map((workspace) => workspace.get("config"))
                 .narrow<JsonObject>()
-                .fold<[Status, [String*]]>(initialState)((currentState, toCreate) {
+                .fold<[Status, [<String->String>*]]>(initialState)((currentState, toCreate) {
 
                 value [status, alreadyCreated] = currentState;
 
@@ -171,12 +187,19 @@ class MigrationTool(
                 log.info(() => "Migration of workspace `` workspaceName ``");
                 log.debug(() => "    Workspace configuration to create:\n`` toCreate.pretty ``");
 
-                try (response = postJson(destinationEndpoint, toCreate.string)) {
+                try (response = postJson(destinationEndpoint, modifyWorkspaceJson(toCreate.string))) {
 
                     switch(response.code())
                     case(201) {
-                        log.info(() => "    => OK");
-                        return [Status.success, [workspaceName, *alreadyCreated]];
+                        if (exists responseBody = response.body()?.string_method(),
+                            is JsonObject createdWorkspace = parseJSON(responseBody),
+                            exists id = createdWorkspace.get("id")) {
+
+                            log.info(() => "    => OK");
+                            return [Status.success, [ id.string->workspaceName, *alreadyCreated ]];
+                        } else {
+                            return [Status.noIdInCreatedWorkspace(response), alreadyCreated];
+                        }
                     }
                     case(403) {
                         return [Status.noRightToCreateNewWorkspace, alreadyCreated];
@@ -195,10 +218,12 @@ class MigrationTool(
             });
 
             if (nonempty createdWorkspaces) {
-                log.info("Created workspaces: `` createdWorkspaces ``");
+                log.info("Created workspaces: ``
+                    createdWorkspaces.map((id->name)=> name + "(id: `` id ``)") ``");
             } else {
                 log.info("No workspaces created");
             }
+            status.migratedWorkspaces = JsonObject { *createdWorkspaces }.pretty;
             return status;
         } catch(Exception e) {
             value status = Status.unexpectedException(e);
@@ -206,5 +231,8 @@ class MigrationTool(
             return status;
         }
     }
-}
 
+    shared void rollbackCreatedWorkspace(<String->String> idAndName) {
+
+    }
+}

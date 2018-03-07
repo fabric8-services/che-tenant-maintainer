@@ -49,10 +49,22 @@ objects:
                 key: che-multitenant-server
                 name: migration
                 optional: true
+          - name: CHE_DESTINATION_SERVER
+            valueFrom:
+              configMapKeyRef:
+                key: che-destination-server
+                name: migration
+                optional: true
           - name: OSIO_TOKEN
             valueFrom:
               configMapKeyRef:
                 key: osio-token
+                name: migration
+                optional: true
+          - name: MIGRATION
+            valueFrom:
+              configMapKeyRef:
+                key: migration
                 name: migration
                 optional: true
           - name: IDENTITY_ID
@@ -72,7 +84,7 @@ objects:
           image: ${IMAGE}
           imagePullPolicy: "Always"
         restartPolicy: Never
-        serviceAccount: che
+#        serviceAccount: che
 parameters:
 - description: The container image
   name: IMAGE

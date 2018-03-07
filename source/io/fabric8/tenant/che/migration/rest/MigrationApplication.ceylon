@@ -8,17 +8,22 @@ import javax.ws.rs.core {
     Application,
     MediaType
 }
+import io.fabric8.tenant.che.migration.namespace {
+    migrationNames
+}
 
-applicationPath("/fabric8-tenant-che-migration")
+applicationPath("/")
 shared class MigrationApplication() extends Application() {}
 
 path("")
-shared class WorkspacesEndpoint() {
+shared class MainEndpoint() {
     get
     produces {MediaType.textPlain}
     shared String help() =>
-            """
-               Single-tenant to multi-tenant migration tool
-               """;
+            "Fabric8 migration and maintenance tool for User Che tenants.
+
+             Available endpoints: `` ", ".join(migrationNames) ``
+
+             For each endpoint, you can get help by requesting the './help' subpath.";
 }
 
