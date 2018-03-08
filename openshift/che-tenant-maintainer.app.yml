@@ -38,6 +38,8 @@ objects:
             value: http://che-host:8080/wsmaster/api
           - name: CHE_DESTINATION_SERVER
             value: http://rhche-host:8080/api
+          - name: OS_MASTER_URL
+            value: http://f8osoproxy:8080
           image: ${IMAGE}:${IMAGE_TAG}
           imagePullPolicy: Always
           livenessProbe:
