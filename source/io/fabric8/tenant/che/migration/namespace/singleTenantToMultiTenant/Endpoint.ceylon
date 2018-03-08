@@ -8,7 +8,8 @@ import javax.ws.rs {
 import javax.ws.rs.core {
     MediaType,
     context,
-    UriInfo
+    UriInfo,
+    HttpHeaders
 }
 import io.fabric8.tenant.che.migration.namespace {
     MigrationEndpoint,
@@ -24,11 +25,11 @@ shared class Endpoint() extends MigrationEndpoint<Migration>() {
     post
     produces {MediaType.applicationJson}
     consumes {MediaType.applicationJson}
-    shared actual Status post(String json) => super.post(json);
+    shared actual Status post(context HttpHeaders headers, String json) => super.post(headers, json);
 
     get
     produces {MediaType.applicationJson}
-    shared actual Status get(context UriInfo info) => super.get(info);
+    shared actual Status get(context HttpHeaders headers, context UriInfo info) => super.get(headers, info);
 
     get
     path("help")
