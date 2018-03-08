@@ -1,24 +1,24 @@
 apiVersion: v1
 kind: Template
 metadata:
-  name: fabric8-tenant-che-maintenance-template
+  name: che-tenant-maintainer-template
 objects:
 - apiVersion: v1
   kind: DeploymentConfig
   metadata:
     labels:
-      app: fabric8-tenant-che-maintenance
-    name: fabric8-tenant-che-maintenance
+      app: che-tenant-maintainer
+    name: che-tenant-maintainer
   spec:
     replicas: 1
     selector:
-      app: fabric8-tenant-che-maintenance
+      app: che-tenant-maintainer
     strategy:
       type: RollingUpdate
     template:
       metadata:
         labels:
-          app: fabric8-tenant-che-maintenance
+          app: che-tenant-maintainer
       spec:
         containers:
         - env:
@@ -26,13 +26,13 @@ objects:
             valueFrom:
               configMapKeyRef:
                 key: java-options
-                name: fabric8-tenant-che-maintenance
+                name: che-tenant-maintainer
                 optional: true
           - name: DEBUG
             valueFrom:
               configMapKeyRef:
                 key: debug
-                name: fabric8-tenant-che-maintenance
+                name: che-tenant-maintainer
                 optional: true
           - name: CHE_MULTITENANT_SERVER
             value: http://che-host:8080/wsmaster/api
@@ -48,7 +48,7 @@ objects:
             initialDelaySeconds: 30
             timeoutSeconds: 30
           command: [ "java", "-jar", "io.fabric8.tenant.che.migration.rest.jar" ]
-          name: fabric8-tenant-che-maintenance
+          name: che-tenant-maintainer
           ports:
           - containerPort: 8080
             name: http
@@ -64,8 +64,8 @@ objects:
   kind: Service
   metadata:
     labels:
-      app: fabric8-tenant-che-maintenance
-    name: fabric8-tenant-che-maintenance
+      app: che-tenant-maintainer
+    name: che-tenant-maintainer
   spec:
     ports:
     - name: http
@@ -73,7 +73,7 @@ objects:
       protocol: TCP
       targetPort: 8080
     selector:
-      app: fabric8-tenant-che-maintenance
+      app: che-tenant-maintainer
 parameters:
 - name: IMAGE
   value: "registry.devshift.net/fabric8-services/fabric8-tenant-che-migration"
@@ -82,7 +82,7 @@ parameters:
 - description: Add DEBUG logs
   name: DEBUG
   value: "false"
-- description: The Java options to run the migration with
+- description: The Java options to run the service with
   name: JAVA_OPTIONS
   value: ""
 
