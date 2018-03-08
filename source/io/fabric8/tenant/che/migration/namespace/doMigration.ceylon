@@ -10,14 +10,17 @@ import fr.minibilles.cli {
 import java.lang {
     System
 }
+import ceylon.json {
+    JsonObject
+}
 
-Status doMigration<Migration>(String programName, [String*]|String argumentsOrJson)
+Status doMigration<Migration>(String programName, [String*]|JsonObject argumentsOrJson)
     given Migration satisfies NamespaceMigration {
 
     System.setProperty("kubernetes.auth.tryKubeConfig", "true");
     try {
         value parsingResult = switch (argumentsOrJson)
-        case (is String) parseJson<Migration>(argumentsOrJson.string)
+        case (is JsonObject) parseJson<Migration>(argumentsOrJson.string)
         else parseArguments<Migration>(argumentsOrJson);
 
         switch (parsingResult)

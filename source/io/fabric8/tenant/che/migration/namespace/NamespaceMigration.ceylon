@@ -26,7 +26,9 @@ import ceylon.time {
 }
 import io.fabric8.openshift.client {
     DefaultOpenShiftClient,
-    OpenShiftClient
+    OpenShiftClient,
+    OpenShiftConfigBuilder,
+    OpenShiftConfig
 }
 
 shared abstract class NamespaceMigration(
@@ -43,11 +45,32 @@ shared abstract class NamespaceMigration(
         option("job-request-id", 'j')
         shared String jobRequestId = "",
 
+        "OpenShift namespace in which actions will be applied"
+        option("os-namespace", 'n')
+        shared String osNamespace = environment.osNamespace else "",
+
+        "OpenShift token that will be used to apply actions in the namespace"
+        option("os-token", 'n')
+        shared String osToken = environment.osToken else "",
+
         "debug"
         option("debug-logs", 'v')
         shared Boolean debugLogs = false
 
         ) {
+
+    value builder = OpenShiftConfigBuilder();
+    if (!osNamespace.empty) {
+        builder.withNamespace(osNamespace);
+    }
+    if (exists osMasterUrl = environment.osMasterUrl) {
+        builder.withMasterUrl(osMasterUrl);
+    }
+    if (! osToken.empty) {
+        builder.withOauthToken(osToken);
+    }
+
+    shared OpenShiftConfig osConfig = builder.build();
 
     shared formal String name;
 
@@ -61,7 +84,7 @@ shared abstract class NamespaceMigration(
     }
 
     shared restricted(`module`) String osioCheNamespace(OpenShiftClient oc) =>
-            environment.cheNamespace else oc.namespace;
+            if (!osNamespace.empty) then osNamespace else oc.namespace;
 
     shared restricted(`module`) formal Status doMigrate();
 
@@ -121,7 +144,7 @@ shared abstract class NamespaceMigration(
     }
 
     void cleanMigrationResources(String jobRequestId) {
-        try(oc = DefaultOpenShiftClient()) {
+        try(oc = DefaultOpenShiftClient(osConfig)) {
             if (exists configMap = oc.configMaps().inNamespace(osioCheNamespace(oc)).withName("migration").get(),
                 exists reqId = configMap.data.get(JavaString("request-id"))?.string,
                 reqId == jobRequestId) {

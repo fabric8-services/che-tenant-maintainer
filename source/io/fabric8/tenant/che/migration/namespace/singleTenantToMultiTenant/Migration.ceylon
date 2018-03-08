@@ -4,8 +4,7 @@ import ceylon.logging {
 }
 
 import fr.minibilles.cli {
-    option,
-    additionalDoc
+    option
 }
 
 import io.fabric8.kubernetes.api.model {
@@ -41,6 +40,8 @@ shared Migration withDefaultValues() => Migration(
     environment.identityId else "",
     environment.requestId else "",
     environment.jobRequestId else "",
+    environment.osNamespace else "",
+    environment.osToken else "",
     environment.debugLogs
 );
 
@@ -67,9 +68,11 @@ shared class Migration(
         String identityId = "",
         String requestId = "",
         String jobRequestId = "",
+        String namespace = environment.osNamespace else "",
+        String osToken = environment.osToken else "",
         Boolean debugLogs = false
 
-        ) extends NamespaceMigration(identityId, requestId, jobRequestId, debugLogs) {
+        ) extends NamespaceMigration(identityId, requestId, jobRequestId, namespace, osToken, debugLogs) {
 
     name = Name.name;
 
@@ -89,7 +92,7 @@ shared class Migration(
 
         function serverCleaned(DeploymentConfigResource? deploymentConfig) => ! deploymentConfig?.get() exists;
 
-        try(oc = DefaultOpenShiftClient()) {
+        try(oc = DefaultOpenShiftClient(osConfig)) {
             value namespace = osioCheNamespace(oc);
 
             value lockResources = oc.configMaps().inNamespace(namespace).withName("migration-lock");
@@ -230,7 +233,7 @@ shared class Migration(
     }
 
     Boolean cleanSingleTenantCheServer() {
-        try(oc = DefaultOpenShiftClient()) {
+        try(oc = DefaultOpenShiftClient(osConfig)) {
             String namespace = osioCheNamespace(oc);
 
             log.info("Stopping the Che server in namespace `` namespace ``");
