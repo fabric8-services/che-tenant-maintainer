@@ -78,7 +78,7 @@ objects:
       app: fabric8-tenant-che-maintenance
 parameters:
 - name: IMAGE
-  value: "docker.io/dfestal/fabric8-tenant-che-migration"
+  value: "registry.devshift.net/fabric8-services/fabric8-tenant-che-migration"
 - name: IMAGE_TAG
   value: "latest"
 - description: Add DEBUG logs
