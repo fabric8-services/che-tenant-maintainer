@@ -87,5 +87,3 @@ parameters:
 - description: The Java options to run the service with
   name: JAVA_OPTIONS
   value: ""
-
-
