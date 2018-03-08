@@ -1,0 +1,30 @@
+apiVersion: v1
+kind: Template
+metadata:
+  name: fabric8-tenant-che-migration-configmap-template
+objects:
+- apiVersion: v1
+  data:
+    migration: 'che5ToChe6'
+    identity-id: theIdentity
+    request-id: ${REQUEST_ID}
+    osio-token: ${OSIO_TOKEN}
+    che-multitenant-server: ${CHE_MULTITENANT_SERVER}
+    che-destination-server: ${CHE_DESTINATION_SERVER}
+  kind: ConfigMap
+  metadata:
+    name: migration
+    namespace: dfestal-che
+parameters:
+- description: Osio Token
+  name: OSIO_TOKEN
+  value: ""
+- description: Request ID
+  name: REQUEST_ID
+  value: "theRequestId"
+- description: Base URL of the multi-tenant Che server
+  name: CHE_MULTITENANT_SERVER
+  value: 'https://che.prod-preview.openshift.io/wsmaster/api'
+- description: Base URL of the multi-tenant Che server
+  name: CHE_DESTINATION_SERVER
+  value: 'https://rhche.prod-preview.openshift.io/api'

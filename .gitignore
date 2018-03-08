@@ -1,7 +1,8 @@
 /modules/
 /.exploded/
-/io.fabric8.tenant.che.migration.workspaces-*.war
-/io.fabric8.tenant.che.migration.workspaces-*-swarm.jar
+/io.fabric8.tenant.che.migration.rest-*.war
+/io.fabric8.tenant.che.migration.rest.jar
 /.settings/
 /.ceylon/config~
+/.ceylon/ide-config~
 /.idea/libraries/Ceylon__*.xml

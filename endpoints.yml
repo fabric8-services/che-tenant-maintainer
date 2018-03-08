@@ -97,4 +97,8 @@ parameters:
 - description: Add DEBUG logs
   name: DEBUG
   value: "false"
+- description: The Java options to run the migration with
+  name: JAVA_OPTIONS
+  value: ""
+
 

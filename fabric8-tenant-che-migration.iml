@@ -39,7 +39,7 @@
     <orderEntry type="library" scope="PROVIDED" name="Ceylon: com.squareup.okhttp3:okhttp/3.8.1" level="project" />
     <orderEntry type="library" scope="PROVIDED" name="Ceylon: com.squareup.okio:okio/1.13.0" level="project" />
     <orderEntry type="library" scope="PROVIDED" name="Ceylon: dk.brics.automaton:automaton/1.11-8" level="project" />
-    <orderEntry type="library" scope="PROVIDED" name="Ceylon: fr.minibilles.cli/0.2.1" level="project" />
+    <orderEntry type="library" scope="PROVIDED" name="Ceylon: fr.minibilles.cli/0.3.0" level="project" />
     <orderEntry type="library" scope="PROVIDED" name="Ceylon: io.fabric8:kubernetes-client/2.6.3" level="project" />
     <orderEntry type="library" scope="PROVIDED" name="Ceylon: io.fabric8:kubernetes-model/1.1.4" level="project" />
     <orderEntry type="library" scope="PROVIDED" name="Ceylon: io.fabric8:openshift-client/2.6.3" level="project" />

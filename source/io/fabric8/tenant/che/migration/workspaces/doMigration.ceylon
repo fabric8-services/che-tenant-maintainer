@@ -3,21 +3,27 @@ import ceylon.logging {
 }
 import fr.minibilles.cli {
     Info,
-    parseArguments
+    parseArguments,
+    parseJson
 }
 import ceylon.file {
     File,
     Nil
 }
+
 "Runs the migration from either command line or the REST endpoint"
-shared Status doMigration(String* arguments) {
+shared [Status, MigrationTool=] doMigration([String*]|String argumentsOrJson) {
     logSettings.reset();
 
     try {
-        switch(parsingResult = parseArguments<MigrationTool>(arguments))
+        value parsingResult = switch(argumentsOrJson)
+        case(is String) parseJson<MigrationTool>(argumentsOrJson)
+        else parseArguments<MigrationTool>(argumentsOrJson);
+
+        switch(parsingResult)
         case(is Info) {
             print(buildHelp());
-            return Status.buildHelpShown;
+            return [Status.buildHelpShown];
         }
         case(is MigrationTool) {
             value migrator = parsingResult;
@@ -32,7 +38,7 @@ shared Status doMigration(String* arguments) {
                     logFile = resource;
                 }
                 else {
-                    return Status.logFileCannotBeWritten(logPath);
+                    return [Status.logFileCannotBeWritten(logPath)];
                 }
 
                 logSettings.file = logFile;
@@ -40,13 +46,13 @@ shared Status doMigration(String* arguments) {
 
             logSettings.quiet = migrator.quiet;
 
-            return migrator.run();
+            return [migrator.migrate(), migrator];
         }
         else {
             value errors = parsingResult;
-            return Status.wrongCommandLine(*errors);
+            return [Status.wrongCommandLine(*errors)];
         }
     } catch(Exception e) {
-        return Status.unexpectedException(e);
+        return [Status.unexpectedException(e)];
     }
 }

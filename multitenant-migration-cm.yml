@@ -5,6 +5,7 @@ metadata:
 objects:
 - apiVersion: v1
   data:
+    migration: 'singleTenantToMultiTenant'
     che-multitenant-server: ${CHE_MULTITENANT_SERVER}
     identity-id: theIdentity
     osio-token: ${OSIO_TOKEN}
@@ -18,12 +19,12 @@ parameters:
 - description: Osio Token
   name: OSIO_TOKEN
   value: ""
-- description: If we should cleanup single resources after migration
+- description: If we should cleanup single tenant resources after single-tenant to multi-tenant migration
   name: CLEANUP_SINGLE_TENANT
   value: "true"
 - description: Request ID
   name: REQUEST_ID
   value: "theRequestId"
-- description: Base URL of the destination multi-tenant Che server
+- description: Base URL of the multi-tenant Che server
   name: CHE_MULTITENANT_SERVER
-  value: 'https://che-dfestal-che.glusterpoc37aws.devshift.net'
+  value: 'https://che.glusterpoc37aws.devshift.net'
