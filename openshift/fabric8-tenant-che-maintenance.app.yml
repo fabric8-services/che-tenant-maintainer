@@ -14,9 +14,7 @@ objects:
     selector:
       app: fabric8-tenant-che-maintenance
     strategy:
-      type: Recreate
-      recreateParams:
-        timeoutSeconds: 10000
+      type: RollingUpdate
     template:
       metadata:
         labels:
