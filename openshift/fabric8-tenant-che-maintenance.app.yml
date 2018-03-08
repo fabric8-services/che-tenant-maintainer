@@ -1,0 +1,91 @@
+apiVersion: v1
+kind: Template
+metadata:
+  name: fabric8-tenant-che-maintenance-template
+objects:
+- apiVersion: v1
+  kind: DeploymentConfig
+  metadata:
+    labels:
+      app: fabric8-tenant-che-maintenance
+    name: fabric8-tenant-che-maintenance
+  spec:
+    replicas: 1
+    selector:
+      app: fabric8-tenant-che-maintenance
+    strategy:
+      type: Recreate
+      recreateParams:
+        timeoutSeconds: 10000
+    template:
+      metadata:
+        labels:
+          app: fabric8-tenant-che-maintenance
+      spec:
+        containers:
+        - env:
+          - name: JAVA_OPTS
+            valueFrom:
+              configMapKeyRef:
+                key: java-options
+                name: fabric8-tenant-che-maintenance
+                optional: true
+          - name: DEBUG
+            valueFrom:
+              configMapKeyRef:
+                key: debug
+                name: fabric8-tenant-che-maintenance
+                optional: true
+          - name: CHE_MULTITENANT_SERVER
+            value: http://che-host:8080/wsmaster/api
+          - name: CHE_DESTINATION_SERVER
+            value: http://rhche-host:8080/api
+          image: ${IMAGE}:${IMAGE_TAG}
+          imagePullPolicy: Always
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 8080
+              scheme: HTTP
+            initialDelaySeconds: 30
+            timeoutSeconds: 30
+          command: [ "java", "-jar", "io.fabric8.tenant.che.migration.rest.jar" ]
+          name: fabric8-tenant-che-maintenance
+          ports:
+          - containerPort: 8080
+            name: http
+          resources:
+            limits:
+              memory: 768Mi
+            requests:
+              memory: 512Mi
+        terminationGracePeriodSeconds: 30
+    triggers:
+    - type: ConfigChange
+- apiVersion: v1
+  kind: Service
+  metadata:
+    labels:
+      app: fabric8-tenant-che-maintenance
+    name: fabric8-tenant-che-maintenance
+  spec:
+    ports:
+    - name: http
+      port: 8080
+      protocol: TCP
+      targetPort: 8080
+    selector:
+      app: fabric8-tenant-che-maintenance
+parameters:
+- name: IMAGE
+  value: "docker.io/dfestal/fabric8-tenant-che-migration"
+- name: IMAGE_TAG
+  value: "latest"
+- description: Add DEBUG logs
+  name: DEBUG
+  value: "false"
+- description: The Java options to run the migration with
+  name: JAVA_OPTIONS
+  value: ""
+
+

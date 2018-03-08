@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: fabric8-tenant-che-maintenance
+data:
+  debug: false
+  java-options: ''
