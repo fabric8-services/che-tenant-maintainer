@@ -79,7 +79,7 @@ shared class Migration(
     value cheSingleTenantCheServerName="che";
     value cheSingleTenantCheServerRoute="che";
 
-    shared actual Status doMigrate() {
+    shared actual Status migrate() {
         value keycloakToken = environment.osioToken;
         String singleTenantCheServer;
 

@@ -1,5 +1,6 @@
 import io.fabric8.tenant.che.migration.workspaces {
-    log
+    log,
+    logSettings
 }
 import fr.minibilles.cli {
     Info,
@@ -13,11 +14,18 @@ import java.lang {
 import ceylon.json {
     JsonObject
 }
+import ceylon.logging {
+    debug,
+    info
+}
 
 Status doMigration<Migration>(String programName, [String*]|JsonObject argumentsOrJson)
     given Migration satisfies NamespaceMigration {
 
+    logSettings.reset(environment.debugLogs then debug else info);
+
     System.setProperty("kubernetes.auth.tryKubeConfig", "true");
+    log.debug(() => "Applying migration '`` programName ``' with the following parameters: `` argumentsOrJson ``");
     try {
         value parsingResult = switch (argumentsOrJson)
         case (is JsonObject) parseJson<Migration>(argumentsOrJson.string)
@@ -33,7 +41,7 @@ Status doMigration<Migration>(String programName, [String*]|JsonObject arguments
         }
         else {
             value errors = parsingResult;
-            return Status(1, "Wrong command line:\n`` "\n - ".join { errors } ``");
+            return Status(1, "Wrong parameters:\n`` "\n - ".join { errors } ``");
         }
     } catch (Exception e) {
         log.error("Unexpected exception", e);

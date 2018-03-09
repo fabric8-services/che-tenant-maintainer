@@ -69,13 +69,13 @@ shared class Migration(
         String jobRequestId = "",
         String osNamespace = environment.osNamespace else "",
         String osToken = environment.osToken else "",
-        Boolean debugLogs = false
+        Boolean debugLogs = environment.debugLogs
 
         ) extends NamespaceMigration(identityId, requestId, jobRequestId, osNamespace, osToken, debugLogs) {
 
     name = Name.name;
 
-    shared actual Status doMigrate() {
+    shared actual Status migrate() {
         try(oc = DefaultOpenShiftClient(osConfig)) {
             value namespace = osioCheNamespace(oc);
 

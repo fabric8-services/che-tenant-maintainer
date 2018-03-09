@@ -1,34 +1,30 @@
-import java.lang {
-    JavaString=String
-}
-import ceylon.logging {
-    debug,
-    Priority,
-    defaultPriority
-}
-import fr.minibilles.cli {
-    option
-}
-import io.fabric8.tenant.che.migration.workspaces {
-    logSettings,
-    log
-}
-import ceylon.json {
-    Object
-}
 import ceylon.file {
     File,
     parsePath,
     Nil
 }
-import ceylon.time {
-    systemTime
+import ceylon.logging {
+    debug,
+    info
 }
+
+import fr.minibilles.cli {
+    option
+}
+
 import io.fabric8.openshift.client {
     DefaultOpenShiftClient,
     OpenShiftClient,
     OpenShiftConfigBuilder,
     OpenShiftConfig
+}
+import io.fabric8.tenant.che.migration.workspaces {
+    logSettings,
+    log
+}
+
+import java.lang {
+    JavaString=String
 }
 
 shared abstract class NamespaceMigration(
@@ -55,7 +51,7 @@ shared abstract class NamespaceMigration(
 
         "debug"
         option("debug-logs", 'v')
-        shared Boolean debugLogs = false
+        shared Boolean debugLogs = environment.debugLogs
 
         ) {
 
@@ -74,37 +70,14 @@ shared abstract class NamespaceMigration(
 
     shared formal String name;
 
-    shared Status migrate() {
-        logSettings.reset();
-        if (debugLogs) {
-            defaultPriority = debug;
-        }
-
-        return doMigrate();
-    }
-
     shared restricted(`module`) String osioCheNamespace(OpenShiftClient oc) =>
             if (!osNamespace.empty) then osNamespace else oc.namespace;
 
-    shared restricted(`module`) formal Status doMigrate();
+    shared formal Status migrate();
 
     shared Integer runAsPod() {
-        function logToJson(Priority p, String m, Throwable? t) {
-            variable String stacktrace = "";
-            if (exists t) {
-                printStackTrace(t, (st) { stacktrace += st; });
-            }
-            return Object({
-                "timestamp" -> systemTime.milliseconds(),
-                "logger_name" -> "fabric8-tenant-che-migration",
-                "message" -> m,
-                "priority" -> p.string,
-                if (! stacktrace.empty) then "stack_trace" -> stacktrace else null,
-                if (!identityId.empty) then "identity_id" -> identityId else null,
-                if (!requestId.empty) then "req_id" -> requestId else null
-            }.coalesced).string;
-        }
-        logSettings.format = logToJson;
+        logSettings.format = logToJson(()=>identityId, ()=>requestId);
+        logSettings.reset(environment.debugLogs then debug else info);
 
         if (jobRequestId.empty) {
             log.error("JOB_REQUEST_ID doesn't exit. The migration should be started with a REQUEST_ID");

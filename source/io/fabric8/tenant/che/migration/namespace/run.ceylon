@@ -8,15 +8,12 @@ import ceylon.language.meta {
 }
 
 import io.fabric8.tenant.che.migration.workspaces {
-    logSettings,
     log
 }
 
 "Run the module `io.fabric8.tenant.che.migration.namespace`."
 suppressWarnings("expressionTypeNothing")
 shared void run() {
-    logSettings.reset();
-
     value podMigrations = migrationTypes.map(withDefaultValues).coalesced;
     value migration = podMigrations.find((m)=> m.name == (environment.migration else ""));
     if (! exists migration) {

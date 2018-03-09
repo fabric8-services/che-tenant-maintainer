@@ -233,6 +233,43 @@ shared class MigrationTool(
     }
 
     shared void rollbackCreatedWorkspace(<String->String> idAndName) {
+        value id->name = idAndName;
+/*
+        send(Http().get()
+            .url(endpoint));
 
+        log.info(() => "Migration of workspace `` workspaceName ``");
+        log.debug(() => "    Workspace configuration to create:\n`` toCreate.pretty ``");
+
+        try (response = postJson(destinationEndpoint, modifyWorkspaceJson(toCreate.string))) {
+
+            switch(response.code())
+            case(201) {
+                if (exists responseBody = response.body()?.string_method(),
+                    is JsonObject createdWorkspace = parseJSON(responseBody),
+                    exists id = createdWorkspace.get("id")) {
+
+                    log.info(() => "    => OK");
+                    return [Status.success, [ id.string->workspaceName, *alreadyCreated ]];
+                } else {
+                    return [Status.noIdInCreatedWorkspace(response), alreadyCreated];
+                }
+            }
+            case(403) {
+                return [Status.noRightToCreateNewWorkspace, alreadyCreated];
+            }
+            case(409) {
+                if (! ignoreExisting) {
+                    return [Status.workspaceAlreadyExists(workspaceName), alreadyCreated];
+                }
+                log.info(() => "    => workspace already exists: Ignoring");
+                return [Status.success, alreadyCreated];
+            }
+            else {
+                return [Status.unexpectedErrorInDestinationCheServer(response), alreadyCreated];
+            }
+        }
+    });
+*/
     }
 }
