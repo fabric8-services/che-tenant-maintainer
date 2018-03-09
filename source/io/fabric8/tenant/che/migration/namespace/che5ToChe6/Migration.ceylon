@@ -76,7 +76,7 @@ shared class Migration(
     name = Name.name;
 
     shared actual Status doMigrate() {
-        try(oc = DefaultOpenShiftClient()) {
+        try(oc = DefaultOpenShiftClient(osConfig)) {
             value namespace = osioCheNamespace(oc);
 
             value lockResources = oc.configMaps().inNamespace(namespace).withName("migration-lock");
