@@ -14,7 +14,7 @@ objects:
     selector:
       app: che-tenant-maintainer
     strategy:
-      type: RollingUpdate
+      type: Rolling
     template:
       metadata:
         labels:
