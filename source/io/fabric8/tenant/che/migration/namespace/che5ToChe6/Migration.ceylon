@@ -67,11 +67,11 @@ shared class Migration(
         String identityId = "",
         String requestId = "",
         String jobRequestId = "",
-        String namespace = environment.osNamespace else "",
+        String osNamespace = environment.osNamespace else "",
         String osToken = environment.osToken else "",
         Boolean debugLogs = false
 
-        ) extends NamespaceMigration(identityId, requestId, jobRequestId, namespace, osToken, debugLogs) {
+        ) extends NamespaceMigration(identityId, requestId, jobRequestId, osNamespace, osToken, debugLogs) {
 
     name = Name.name;
 
