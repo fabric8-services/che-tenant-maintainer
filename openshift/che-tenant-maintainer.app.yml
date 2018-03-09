@@ -76,6 +76,16 @@ objects:
       targetPort: 8080
     selector:
       app: che-tenant-maintainer
+- apiVersion: v1
+  kind: Route
+  metadata:
+    labels:
+      app: che-tenant-maintainer
+    name: che-tenant-maintainer
+  spec:
+    to:
+      kind: Service
+      name: che-tenant-maintainer
 parameters:
 - name: IMAGE
   value: "registry.devshift.net/fabric8-services/fabric8-tenant-che-migration"
