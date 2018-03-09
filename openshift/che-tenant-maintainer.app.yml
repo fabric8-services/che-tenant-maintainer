@@ -39,7 +39,7 @@ objects:
           - name: CHE_DESTINATION_SERVER
             value: http://rhche-host:8080/api
           - name: OS_MASTER_URL
-            value: http://f8osoproxy:8080
+            value: http://f8osoproxy
           image: ${IMAGE}:${IMAGE_TAG}
           imagePullPolicy: Always
           livenessProbe:
@@ -56,7 +56,7 @@ objects:
             name: http
           resources:
             limits:
-              memory: 768Mi
+              memory: 1024Mi
             requests:
               memory: 512Mi
         terminationGracePeriodSeconds: 30
@@ -76,16 +76,6 @@ objects:
       targetPort: 8080
     selector:
       app: che-tenant-maintainer
-- apiVersion: v1
-  kind: Route
-  metadata:
-    labels:
-      app: che-tenant-maintainer
-    name: che-tenant-maintainer
-  spec:
-    to:
-      kind: Service
-      name: che-tenant-maintainer
 parameters:
 - name: IMAGE
   value: "registry.devshift.net/fabric8-services/fabric8-tenant-che-migration"
