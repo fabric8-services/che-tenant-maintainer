@@ -34,6 +34,9 @@ import java.lang {
 import java.util {
     Arrays
 }
+import io.fabric8.kubernetes.client {
+    KubernetesClientException
+}
 
 
 shared Migration withDefaultValues() => Migration(
@@ -92,7 +95,13 @@ shared class Migration(
                             break;
                         }
                     } catch(Exception e) {
-                        log.warn("Exception when trying to create the lock config map", e);
+                        if (is KubernetesClientException e,
+                            exists reason = e.status.reason,
+                            reason == "AlreadyExists") {
+                            log.debug("Lock config map already exists. Waiting for it to be released");
+                        } else {
+                            log.warn("Exception when trying to create the lock config map", e);
+                        }
                     }
                 }
                 Thread.sleep(1000);
