@@ -134,36 +134,52 @@ shared class Migration(
                 log.debug("Calling workspace migration utility with the following arguments:\n`` args ``");
 
                 value migrationResult = migrateWorkspaces(args);
-                value status = migrationResult.first;
+                value statusForWorkspaces = migrationResult.first;
 
-                if (! status.migratedWorkspaces.empty) {
+                variable value status =
+                    if (statusForWorkspaces.successful())
+                    then Status(0, "Migration successful", statusForWorkspaces.migratedWorkspaces)
+                    else Status(1, statusForWorkspaces.string, statusForWorkspaces.migratedWorkspaces);
+
+                if (! statusForWorkspaces.migratedWorkspaces.empty) {
                     assert (exists migrator = migrationResult[1]);
-                    if (is JsonObject workspacesJson = parseJSON(status.migratedWorkspaces)) {
+                    if (is JsonObject workspacesJson = parseJSON(statusForWorkspaces.migratedWorkspaces)) {
                         value workspaces = workspacesJson.coalescedMap.map((k->v) => k->v.string );
                         for (id->name in workspaces) {
                             log.info("Migrating workspace files for workspace `` name ``" );
-                            if (! copyWorkspaceFiles(oc, id, name)) {
-                                log.warn(() => " => failure during migration of workspace files for workspace `` name ``");
+
+                            value [code, stderr] = copyWorkspaceFiles(oc, id, name);
+                            if (exists code,
+                                code == 0) {
+                                log.info(() => " => workspace files correctly copied for workspace `` name ``");
+                            } else {
+                                value detailedLog =
+                                if (exists code)
+                                then "Command failed with the following code: `` code `` and termination message: `` stderr else "" ``"
+                                else (stderr else "");
+
+                                String message = "Failure during migration of workspace files for workspace `` name ``: `` detailedLog ``";
+                                log.error(" => `` message ``");
 
                                 value toRollback = workspaces.skipWhile((_->n) => n != name).sequence();
 
                                 log.info(() => " Removing the workspace definition of the following newly created workspaces: ``
-                                                toRollback.map(Entry.item) ``");
+                                toRollback.map(Entry.item) ``");
 
                                 toRollback.each(migrator.rollbackCreatedWorkspace);
-                            } else {
-                                log.info(() => " => workspace files correctly copied for workspace `` name ``");
+                                status = Status(1, message, statusForWorkspaces.migratedWorkspaces);
+                                break;
                             }
                         }
                     }
                 }
 
-                if (status.successful()) {
-                    return Status(0, "Migration successful", status.migratedWorkspaces);
+                if (status.code == 0) {
+                    log.info(status.message);
                 } else {
-                    log.error(status.string);
-                    return Status(1, status.string, status.migratedWorkspaces);
+                    log.error(status.message);
                 }
+                return status;
             } catch(Exception e){
                 value message = "Unexpected exception while migrating namespace `` namespace ``";
                 log.error(message, e);
@@ -179,14 +195,13 @@ shared class Migration(
         return () => system.milliseconds > end;
     }
 
-    Boolean copyWorkspaceFiles(OpenShiftClient oc, String workspaceId, String workspaceName) {
+    [Integer?,String?] copyWorkspaceFiles(OpenShiftClient oc, String workspaceId, String workspaceName) {
 
         value podName = "workspace-data-migration-" + workspaceId;
         value claimName = "claim-che-workspace";
 
         if (! oc.persistentVolumeClaims().withName(claimName).get() exists) {
-            log.error("PVC `` claimName `` doesn't exist !");
-            return false;
+            return [null, "PVC `` claimName `` doesn't exist !"];
         }
 
         value volumeName = "for-migration";
@@ -259,39 +274,12 @@ shared class Migration(
         }
 
         if (exists terminationStatus = status) {
-            if (terminationStatus.exitCode.intValue() == 0) {
-                /*
-                                try {
-                                    oc.pods()
-                                        .withName(podName).delete();
-                                    value stopTimedOut = buildTimeout(20000);
-
-                                    while(oc.pods().withName(podName).get() exists) {
-                                        if (stopTimedOut()) {
-                                            log.warn("Timeout while waiting for `` podName `` POD removal");
-                                            break;
-                                        }
-                                        Thread.sleep(1000);
-                                        return false;
-                                    }
-                                } catch(Exception e) {
-                                    log.warn("Unexpected exception while waiting for `` podName `` POD removal");
-                                }
-                */
-                return true;
-            } else {
-                log.error(
-                    "
-                     Error during command execution: `` terminationStatus.message ``
-                 ");
-                return false;
-            }
+            return [
+                terminationStatus.exitCode.intValue(),
+                terminationStatus.message of String?
+            ];
         } else {
-            log.error(
-                "
-                 Timeout while waiting for command execution
-                 ");
-            return false;
+            return  [null, "Timeout while waiting for command execution"];
         }
     }
 }
