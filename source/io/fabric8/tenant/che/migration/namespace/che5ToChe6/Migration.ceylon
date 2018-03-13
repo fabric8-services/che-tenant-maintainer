@@ -227,7 +227,7 @@ shared class Migration(
             .withVolumes(Arrays.asList(volume))
             .addNewContainer()
             .withName(podName)
-            .withImage("busybox")
+            .withImage("registry.access.redhat.com/rhel7-atomic")
             .withImagePullPolicy("IfNotPresent")
             .withVolumeMounts(Arrays.asList(*[
             VolumeMountBuilder()
