@@ -227,7 +227,8 @@ shared class Migration(
             .withVolumes(Arrays.asList(volume))
             .addNewContainer()
             .withName(podName)
-            .withImage("centos:centos7")
+            .withImage("busybox")
+            .withImagePullPolicy("IfNotPresent")
             .withVolumeMounts(Arrays.asList(*[
             VolumeMountBuilder()
                 .withMountPath("/old")
