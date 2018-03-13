@@ -144,7 +144,7 @@ shared class Migration(
                 if (! statusForWorkspaces.migratedWorkspaces.empty) {
                     assert (exists migrator = migrationResult[1]);
                     if (is JsonObject workspacesJson = parseJSON(statusForWorkspaces.migratedWorkspaces)) {
-                        value workspaces = workspacesJson.coalescedMap.map((k->v) => k->v.string );
+                        value workspaces = workspacesJson.coalescedMap.map((k->v) => k->v.string ).sequence();
                         for (id->name in workspaces) {
                             log.info("Migrating workspace files for workspace `` name ``" );
 
@@ -279,7 +279,15 @@ shared class Migration(
                 terminationStatus.message of String?
             ];
         } else {
-            return  [null, "Timeout while waiting for command execution"];
+            if (exists pendingPod = oc.pods()
+                .withName(podName)
+                .get(),
+                exists phase = pendingPod.status?.phase,
+                phase == "Pending") {
+                    oc.pods().withName(podName).delete();
+            }
+            
+            return  [null, "Timeout while waiting for container creation or command execution"];
         }
     }
 }
