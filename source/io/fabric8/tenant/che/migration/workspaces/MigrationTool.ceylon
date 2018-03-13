@@ -234,42 +234,28 @@ shared class MigrationTool(
 
     shared void rollbackCreatedWorkspace(<String->String> idAndName) {
         value id->name = idAndName;
-/*
-        send(Http().get()
-            .url(endpoint));
 
-        log.info(() => "Migration of workspace `` workspaceName ``");
-        log.debug(() => "    Workspace configuration to create:\n`` toCreate.pretty ``");
-
-        try (response = postJson(destinationEndpoint, modifyWorkspaceJson(toCreate.string))) {
-
+        value endpoint = "``destinationCheServer``/workspace/``id``";
+        
+        try (response = send(Http().delete().url(endpoint))) {
             switch(response.code())
-            case(201) {
-                if (exists responseBody = response.body()?.string_method(),
-                    is JsonObject createdWorkspace = parseJSON(responseBody),
-                    exists id = createdWorkspace.get("id")) {
-
-                    log.info(() => "    => OK");
-                    return [Status.success, [ id.string->workspaceName, *alreadyCreated ]];
-                } else {
-                    return [Status.noIdInCreatedWorkspace(response), alreadyCreated];
-                }
+            case(204) {
             }
             case(403) {
-                return [Status.noRightToCreateNewWorkspace, alreadyCreated];
+                log.warn("User doesn't have right to remove workspace `` name
+                        ``... This should never happen since the workspace was just created by this user");
             }
             case(409) {
-                if (! ignoreExisting) {
-                    return [Status.workspaceAlreadyExists(workspaceName), alreadyCreated];
-                }
-                log.info(() => "    => workspace already exists: Ignoring");
-                return [Status.success, alreadyCreated];
+                log.warn("User cannot rollback the creation of workspace `` name 
+                        `` since it's already running... This should never happen since the workspace was just created by this user");
+            }
+            case(404) {
+                log.warn("User cannot rollback the creation of workspace `` name 
+                        `` since doesn't exist... This should never happen since the workspace was just created by this user");
             }
             else {
-                return [Status.unexpectedErrorInDestinationCheServer(response), alreadyCreated];
+                log.warn("User cannot rollback the creation of workspace `` name ``: unexpected error");
             }
         }
-    });
-*/
     }
 }
