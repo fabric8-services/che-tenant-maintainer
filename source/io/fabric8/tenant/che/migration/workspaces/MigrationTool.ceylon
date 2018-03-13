@@ -168,6 +168,15 @@ shared class MigrationTool(
                 return Status.invalidJsonInWorkspaceList(responseContents);
             }
 
+            if (exists running = workspaces
+                .narrow<JsonObject>()
+                .find((workspace) => 
+                    if (exists status = workspace.getStringOrNull("status"))
+                    then status != "STOPPED"
+                    else false)) {
+                return Status.workspacesShouldBeStopped(running.getStringOrNull("id") else "unknown");
+            }
+                
             value initialState = [Status.success, []];
             value [status, createdWorkspaces] = workspaces
                 .narrow<JsonObject>()

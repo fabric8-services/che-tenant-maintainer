@@ -18,7 +18,8 @@ shared class Status {
         8 -> "The workspace already exists in the destination Che server",
         9 -> "Log file cannot be written",
         10 -> "Unexpected exception",
-        11 -> "The created workspace JSON response doesn't contain any Id"
+        11 -> "The created workspace JSON response doesn't contain any Id",
+        12 -> "The workspaces should be stopped to run the migration"
     });
         
     shared Integer code;
@@ -78,6 +79,10 @@ shared class Status {
 
     shared new noIdInCreatedWorkspace(Response response) extends fromCode(11) {
         details = "\n" + dumpResponse(response);
+    }
+
+    shared new workspacesShouldBeStopped(String workspaceId) extends fromCode(12) {
+        details = "\n + workspaceId";
     }
 
     string => "".join {
