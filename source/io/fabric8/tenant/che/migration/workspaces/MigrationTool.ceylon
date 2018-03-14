@@ -194,7 +194,7 @@ shared class MigrationTool(
                 value workspaceName = toCreate.getString("name");
 
                 log.info(() => "Migration of workspace `` workspaceName ``");
-                log.debug(() => "    Workspace configuration to create:\n`` toCreate.pretty ``");
+                log.debug(() => "    Workspace configuration to create:\n`` toCreate.string ``");
 
                 try (response = postJson(destinationEndpoint, modifyWorkspaceJson(toCreate.string))) {
 
@@ -232,7 +232,7 @@ shared class MigrationTool(
             } else {
                 log.info("No workspaces created");
             }
-            status.migratedWorkspaces = JsonObject { *createdWorkspaces }.pretty;
+            status.migratedWorkspaces = JsonObject { *createdWorkspaces }.string;
             return status;
         } catch(Exception e) {
             value status = Status.unexpectedException(e);

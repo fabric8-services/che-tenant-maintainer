@@ -244,7 +244,7 @@ shared class Migration(
             .withCommand(
                 "/bin/bash",
                 "-c",
-                """if [ "A$(ls /old)A" == "AA" ]; then echo 'No projects tocopy in this workspace'; else echo 'About to copy the following folders: ' && ls /old && cp -Rf /old/* /new 2> /dev/termination-log; fi;"""
+                """if [ "A$(ls /old)A" == "AA" ]; then echo 'No projects to copy in this workspace'; else echo 'About to copy the following folders: ' && ls /old && cp -Rf /old/* /new 2> /dev/termination-log; fi;"""
             )
             .endContainer()
             .endSpec()
