@@ -20,7 +20,7 @@ if [ "${ADD_REST_ENDPOINTS}" == "true" ]; then
     echo "Create the Wildfly Swarm application ..."
 
     ceylon plugin install ceylon.swarm/1.3.3 || true
-    ceylon swarm --provided-module=javax.ws.rs:javax.ws.rs-api --provided-module=io.undertow:undertow-servlet --provided-module=org.jboss.weld:weld-core-impl io.fabric8.tenant.che.migration.rest
+    ceylon swarm --dependencies=org.wildfly.swarm:jolokia:2018.3.3,org.wildfly.swarm:jaxrs:2018.3.3 --swarm-version=2018.3.3 --provided-module=javax.ws.rs:javax.ws.rs-api io.fabric8.tenant.che.migration.rest
     mv io.fabric8.tenant.che.migration.rest-*-swarm.jar io.fabric8.tenant.che.migration.rest.jar
 else
     echo

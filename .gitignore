@@ -6,3 +6,4 @@
 /.ceylon/config~
 /.ceylon/ide-config~
 /.idea
+/audit.log

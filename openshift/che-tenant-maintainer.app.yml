@@ -54,6 +54,8 @@ objects:
           ports:
           - containerPort: 8080
             name: http
+          - containerPort: 8080
+            name: jolokia
           resources:
             limits:
               memory: 1024Mi
