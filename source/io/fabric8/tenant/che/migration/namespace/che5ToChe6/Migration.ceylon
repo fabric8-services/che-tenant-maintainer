@@ -125,11 +125,16 @@ shared class Migration(
                     "token"-> keycloakToken,
                     "destination"-> destinationCheServer,
                     "ignore-existing"-> "true",
-                    "replace" -> "agents:installers",
                     if(defaultPriority == debug) "log-level" -> "DEBUG"
-                }.map((name -> val)=> if (! val.empty) then "--``name``=``val``" else null)
-                    .coalesced
-                    .sequence();
+                }.map((name -> val) => if (! val.empty) then "--``name``=``val``" else null)
+                .coalesced
+                .chain({
+                    """/"agents"(:\[[^]]+)\]/"installers"$1,"com.redhat.oc-login"]/""",
+                    """/("recipe":\{)"location"/$1"content"/""",
+                    """#("previewUrl":")http:[\\/]+(\$\{server\.)port\.(\d+)\}"#$1$2$3/tcp}"#g""",
+                    """#("previewUrl":"\$\{server\.(\d+)/tcp\}")(.*)"servers":\{\}#$1$3"servers":{"$2/tcp":{"port":"$2","protocol":"http"}}#"""
+                })
+                .sequence();
 
                 log.debug("Calling workspace migration utility with the following arguments:\n`` args ``");
 

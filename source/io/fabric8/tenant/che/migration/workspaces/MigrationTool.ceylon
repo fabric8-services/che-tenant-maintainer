@@ -1,8 +1,13 @@
+import ceylon.regex {
+    regex,
+    RegexException
+}
 import fr.minibilles.cli {
     info,
     option,
     creator,
-    additionalDoc
+    additionalDoc,
+    parameters
 }
 import ceylon.file {
     Path,
@@ -34,7 +39,28 @@ import java.net {
     SocketTimeoutException
 }
 
-String exitCodes => "Possible exit codes:\n\n" +
+String exitCodes =>
+    """replace :
+       
+       regular expressions to apply to
+       the workspace Json definition
+       with the form `/<regexp>/<replacement>/[g]`.
+       
+       *Remarks:*
+       
+           - The `/` separator character can be replaced by any other
+       character not used in the `<regexp>` and `<replacement>`.
+           - The `g` character can be suffixed to apply the regular
+       expression *globally*, and not only once.
+       
+       *Examples:*
+
+           - `/("recipe":\{)"location"/$1"content"/`
+           - `/"agents"(:\[[^]]+)\]/"installers"$1,"new-installer"]/`
+    
+       Possible exit codes:
+       
+       """ +
     "\n".join(Status.statuses.sort(byKey(increasing<Integer>))
     .map((code->description)=>"``  code``: ``description``")) +
     "\n";
@@ -46,6 +72,7 @@ String exitCodes => "Possible exit codes:\n\n" +
  from one source Che server to a destination Che server
  "
 additionalDoc(`value exitCodes`)
+parameters({`value replace`})
 info("Shows this help", "help", 'h')
 shared class MigrationTool(
 
@@ -78,11 +105,58 @@ shared class MigrationTool(
     option("qiet", 'q')
     shared Boolean quiet = false,
 
-    "relace expression to apply to the workspace definition
-     under the form comma-separated list of `initialString:finalString`"
-    option("replace")
-    shared String replace = ""
+    """regular expressions to apply to the workspace Json definition
+       with the form `/<regexp>/<replacement>/[g]`.
+       
+       *Remarks:*
+       
+           - The `/` separator character can be replaced by any other
+       character not used in the `<regexp>` and `<replacement>`.
+           - The `g` character can be suffixed to apply the regular
+       expression *globally*, and not only once.
+       
+       *Examples:*
+
+           - `/("recipe":\{)"location"/$1"content"/`
+           - `/"agents"(:\[[^]]+)\]/"installers"$1,"new-installer"]/`
+       """
+    shared [String*] replace = []
 ) {
+    function buildRegexp(variable String param) {
+        variable Boolean global = false;
+        value sepChar = param.first;
+        if (!exists sepChar) {
+            return null;
+        }
+
+        assert(exists end = param.last);
+        if (end != sepChar) {
+            if(end != 'g') {
+                return null;
+            }
+            global = true;
+            param = param.measure(0, param.size - 1);
+        }
+
+        value middle = param.firstOccurrence(sepChar, 1);
+        if (!exists middle) {
+            return null;
+        }
+        assert(exists lastIndex = param.lastIndex);
+        if (middle == lastIndex) {
+            return null;
+        }
+        try {
+            value reg = regex(param[1..middle-1], global, false, false);
+            return [reg, param[middle + 1..param.size-2]];
+        } catch(RegexException e) {
+            log.warn("Problem parsing a replacement regular expression", e);
+            return null;
+        }
+    }
+    
+    value regs = replace.map(buildRegexp).coalesced;
+
     value httpClient = OkHttpClient.Builder()
         .connectTimeout(30, TimeUnit.seconds)
         .readTimeout(30, TimeUnit.seconds)
@@ -102,13 +176,8 @@ shared class MigrationTool(
         .url(endpoint));
 
     function modifyWorkspaceJson(variable String json) {
-        for (rep in replace.split(','.equals)) {
-            value splitReplace = rep.split(':'.equals).sequence();
-            value oldValue = splitReplace[0];
-            value newValue = splitReplace[1];
-            if (exists newValue) {
-                json = json.replace(oldValue, newValue);
-            }
+        for ([reg, repl] in regs) {
+            json = reg.replace(json, repl);
         }
         return json;
     }
