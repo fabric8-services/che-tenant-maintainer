@@ -3,8 +3,9 @@
     <commands>
         <command>read</command>
         <command>list</command>
+        <command>version</command>
+        <command>search</command>
     </commands>
-
     <allow>
         <mbean>
             <name>java.lang:type=Memory</name>
