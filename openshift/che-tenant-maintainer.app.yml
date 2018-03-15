@@ -42,6 +42,8 @@ objects:
             value: 'http://f8osoproxy'
           - name: AB_JOLOKIA_AUTH_OPENSHIFT
             value: 'yes'
+          - name: AB_JOLOKIA_OPTS
+            value: 'policyLocation=file:jolokia-acces.xml'
           image: ${IMAGE}:${IMAGE_TAG}
           imagePullPolicy: Always
           livenessProbe:
