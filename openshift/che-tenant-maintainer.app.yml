@@ -43,7 +43,7 @@ objects:
           - name: AB_JOLOKIA_AUTH_OPENSHIFT
             value: 'yes'
           - name: AB_JOLOKIA_OPTS
-            value: 'policyLocation=file:jolokia-acces.xml'
+            value: 'policyLocation=file:jolokia-access.xml'
           image: ${IMAGE}:${IMAGE_TAG}
           imagePullPolicy: Always
           livenessProbe:
