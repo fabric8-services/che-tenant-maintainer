@@ -35,13 +35,13 @@ objects:
                 name: che-tenant-maintainer
                 optional: true
           - name: CHE_MULTITENANT_SERVER
-            value: http://che-host:8080/wsmaster/api
+            value: 'http://che-host:8080/wsmaster/api'
           - name: CHE_DESTINATION_SERVER
-            value: http://rhche-host:8080/api
+            value: 'http://rhche-host:8080/api'
           - name: OS_MASTER_URL
-            value: http://f8osoproxy
+            value: 'http://f8osoproxy'
           - name: AB_JOLOKIA_AUTH_OPENSHIFT
-            value: yes
+            value: 'yes'
           image: ${IMAGE}:${IMAGE_TAG}
           imagePullPolicy: Always
           livenessProbe:
