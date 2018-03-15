@@ -40,6 +40,8 @@ objects:
             value: http://rhche-host:8080/api
           - name: OS_MASTER_URL
             value: http://f8osoproxy
+          - name: AB_JOLOKIA_AUTH_OPENSHIFT
+            value: yes
           image: ${IMAGE}:${IMAGE_TAG}
           imagePullPolicy: Always
           livenessProbe:
@@ -49,19 +51,19 @@ objects:
               scheme: HTTP
             initialDelaySeconds: 30
             timeoutSeconds: 30
-          command: [ "java", "-jar", "io.fabric8.tenant.che.migration.rest.jar" ]
+          command: [ "./startRestEndpointLocally.sh" ]
           name: che-tenant-maintainer
           ports:
           - containerPort: 8080
             name: http
-          - containerPort: 8080
+          - containerPort: 8778
             name: jolokia
           resources:
             limits:
-              memory: 1024Mi
+              memory: 1200Mi
             requests:
               memory: 512Mi
-        terminationGracePeriodSeconds: 30
+        terminationGracePeriodSeconds: 60
     triggers:
     - type: ConfigChange
 - apiVersion: v1
