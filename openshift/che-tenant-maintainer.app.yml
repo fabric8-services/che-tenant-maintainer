@@ -51,7 +51,7 @@ objects:
               scheme: HTTP
             initialDelaySeconds: 30
             timeoutSeconds: 30
-          command: [ "./startRestEndpointLocally.sh" ]
+          command: [ "./startRestEndpointsLocally.sh" ]
           name: che-tenant-maintainer
           ports:
           - containerPort: 8080
