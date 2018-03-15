@@ -181,6 +181,12 @@ shared class Migration(
 
                 if (status.code == 0) {
                     log.info(status.message);
+                    try {
+                        doneResources.createNew().withNewMetadata().withName("che6-migration-done").endMetadata().done();
+                    }
+                    catch(Exception e) {
+                        log.warn("Exception when creating the 'che6-migration-done' config map", e);
+                    }
                 } else {
                     log.error(status.message);
                 }
