@@ -34,6 +34,12 @@ objects:
                 key: debug
                 name: che-tenant-maintainer
                 optional: true
+          - name: JOLOKIA_READ_WRITE
+            valueFrom:
+              configMapKeyRef:
+                key: jolokia-read-write
+                name: che-tenant-maintainer
+                optional: true
           - name: CHE_MULTITENANT_SERVER
             value: 'http://che-host:8080/wsmaster/api'
           - name: CHE_DESTINATION_SERVER
@@ -42,8 +48,6 @@ objects:
             value: 'http://f8osoproxy'
           - name: AB_JOLOKIA_AUTH_OPENSHIFT
             value: 'yes'
-          - name: AB_JOLOKIA_OPTS
-            value: 'policyLocation=file:jolokia-access.xml'
           image: ${IMAGE}:${IMAGE_TAG}
           imagePullPolicy: Always
           livenessProbe:

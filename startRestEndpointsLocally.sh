@@ -13,4 +13,8 @@ get_java_options() {
 export AB_DIR=$dir/agent-bond
 export AB_ENABLED=jolokia
 
+if [ "$JOLOKIA_READ_WRITE" != "true" ]; then
+    export AB_JOLOKIA_OPTS='policyLocation=file:jolokia-readonly-access.xml'
+fi
+
 exec java $(get_java_options) -jar io.fabric8.tenant.che.migration.rest.jar
