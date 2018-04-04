@@ -50,7 +50,7 @@ service docker start
 login
 
 export ADD_REST_ENDPOINTS=true
-export S2I_BUILD=true
+export S2I_BUILD=false
 source ./buildAndPushToDocker.sh
 
 echo 'CICO: Image pushed, ready to update deployed app'
