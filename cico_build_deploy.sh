@@ -35,6 +35,7 @@ function login() {
 # Get all the deps in
 yum -y install \
    docker \
+   java-1.8.0-openjdk-devel \
    make \
    git \
    curl \
