@@ -11,7 +11,13 @@ function tag_push() {
   docker push $TARGET
 }
 
-s2i build -e ADD_REST_ENDPOINTS="${ADD_REST_ENDPOINTS}" -c . ceylon/s2i-ceylon:1.3.3-jre8 f8tenant-che-migration-deploy
+if [ "$S2I_BUILD" == "true" ]; then
+  s2i build -e ADD_REST_ENDPOINTS="${ADD_REST_ENDPOINTS}" -c . ceylon/s2i-ceylon:1.3.3-jre8 f8tenant-che-migration-deploy
+else
+  ./buildLocally.sh
+  docker build -t f8tenant-che-migration-deploy .
+fi
+
 
 if [ "$TAG" != "" ];
 then
