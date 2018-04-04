@@ -22,6 +22,7 @@ if [ "${ADD_REST_ENDPOINTS}" == "true" ]; then
     ceylon plugin install ceylon.swarm/1.3.3 || true
     ceylon swarm  --swarm-version=2018.3.3 --dependencies=org.wildfly.swarm:jaxrs:2018.3.3 --provided-module=javax.ws.rs:javax.ws.rs-api io.fabric8.tenant.che.migration.rest
     mv io.fabric8.tenant.che.migration.rest-*-swarm.jar io.fabric8.tenant.che.migration.rest.jar
+    rm -f io.fabric8.tenant.che.migration.rest-*.war
 
     mkdir -p agent-bond
     curl --fail http://central.maven.org/maven2/io/fabric8/agent-bond-agent/1.2.0/agent-bond-agent-1.2.0.jar -o agent-bond/agent-bond.jar
