@@ -71,7 +71,7 @@ shared abstract class NamespaceMigration(
     shared formal String name;
 
     shared restricted(`module`) String osioCheNamespace(OpenShiftClient oc) =>
-            if (!osNamespace.empty) then osNamespace else oc.namespace;
+            if (!osNamespace.empty) then osNamespace else (oc.namespace else "default");
 
     shared formal Status migrate();
 
