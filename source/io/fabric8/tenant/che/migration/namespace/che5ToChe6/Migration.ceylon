@@ -71,7 +71,7 @@ shared class Migration(
         String requestId = "",
         String jobRequestId = "",
         String osNamespace = environment.osNamespace else "",
-        String osToken = environment.osToken else "",
+        String osToken = environment.osToken else keycloakToken,
         Boolean debugLogs = environment.debugLogs
 
         ) extends NamespaceMigration(identityId, requestId, jobRequestId, osNamespace, osToken, debugLogs) {
@@ -171,7 +171,7 @@ shared class Migration(
                                 log.info(() => " Removing the workspace definition of the following newly created workspaces: ``
                                 toRollback.map(Entry.item) ``");
 
-                                toRollback.each(migrator.rollbackCreatedWorkspace);
+                                toRollback.each(curry(migrator.deleteWorkspace)(destinationCheServer));
                                 status = Status(1, message, statusForWorkspaces.migratedWorkspaces);
                                 break;
                             }
