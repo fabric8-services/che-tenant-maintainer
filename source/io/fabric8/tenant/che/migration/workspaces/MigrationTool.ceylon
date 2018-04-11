@@ -1,42 +1,27 @@
+import ceylon.file {
+    Path,
+    parsePath
+}
+import ceylon.json {
+    parseJSON=parse,
+    JsonObject,
+    InvalidTypeException
+}
+import ceylon.logging {
+    Priority,
+    infoPriority=info
+}
 import ceylon.regex {
     regex,
     RegexException
 }
+
 import fr.minibilles.cli {
     info,
     option,
     creator,
     additionalDoc,
     parameters
-}
-import ceylon.file {
-    Path,
-    parsePath
-}
-import ceylon.json {
-    JsonArray,
-    parseJSON=parse,
-    JsonValue=Value,
-    JsonObject
-}
-import ceylon.logging {
-    Priority,
-    infoPriority = info
-}
-import okhttp3 {
-    Request { Http = Builder },
-    OkHttpClient,
-    RequestBody,
-    MediaType { contentType = parse }
-}
-import java.util.concurrent {
-    TimeUnit
-}
-import java.lang {
-    Thread
-}
-import java.net {
-    SocketTimeoutException
 }
 
 String exitCodes =>
@@ -86,7 +71,7 @@ shared class MigrationTool(
     
     "Keycloak token of the user that will be migrated"
     option("token", 't')
-    shared String keycloakToken,
+    shared actual String keycloakToken,
     
     "Ignore already existing workspaces (without throwing an error)"
     option("ignore-existing", 'i')
@@ -121,7 +106,7 @@ shared class MigrationTool(
            - `/"agents"(:\[[^]]+)\]/"installers"$1,"new-installer"]/`
        """
     shared [String*] replace = []
-) {
+) extends Tool(keycloakToken) {
     function buildRegexp(variable String param) {
         variable Boolean global = false;
         value sepChar = param.first;
@@ -157,24 +142,6 @@ shared class MigrationTool(
     
     value regs = replace.map(buildRegexp).coalesced;
 
-    value httpClient = OkHttpClient.Builder()
-        .connectTimeout(30, TimeUnit.seconds)
-        .readTimeout(30, TimeUnit.seconds)
-        .build();
-
-    function authorization(String keycloakToken) => ["Authorization", "Bearer ``keycloakToken``"];
-
-    function send(Http builder) => httpClient.newCall(builder
-        .header(*authorization(keycloakToken))
-        .build()).execute();
-
-    function get(String endpoint) => send(Http().get()
-        .url(endpoint));
-
-    function postJson(String endpoint, String content) => send(Http()
-        .post(RequestBody.create(contentType("application/json"), content))
-        .url(endpoint));
-
     function modifyWorkspaceJson(variable String json) {
         for ([reg, repl] in regs) {
             json = reg.replace(json, repl);
@@ -184,73 +151,20 @@ shared class MigrationTool(
 
     shared Status migrate() {
         try {
-            value endpointPath = "/workspace";
-            value sourceEndpoint = sourceCheServer + endpointPath;
-            value destinationEndpoint = destinationCheServer + endpointPath;
+            value destinationEndpoint = workspaceEndpoint(destinationCheServer);
 
-            log.debug(() => "Retrieving the list of workspaces from URL : `` sourceEndpoint `` ...");
-
-            JsonValue workspaces;
-
-            String? responseContents;
-            value timeoutMinutes = 2;
-            for(retry in 0:timeoutMinutes*60) {
-                try (response = get(sourceEndpoint)) {
-                    switch(response.code())
-                    case(200) {
-                        responseContents = response.body()?.string_method();
-                        break;
-                    }
-                    case(503) {
-                        log.debug("Source Che server not accessible (error 503). Retrying ...");
-                        // Wait 1 second and retry
-                        Thread.sleep(1000);
-                    }
-                    else {
-                        return Status.unexpectedErrorInSourceCheServer(response);
-                    }
-                } catch(SocketTimeoutException e) {
-                    log.info("SocketTimeout exception when trying to access to the Source Che server. Retrying ...");
-                    // Wait 1 second and retry
-                    Thread.sleep(1000);
-                }
-            } else {
-                log.error("Source Che server not accessible even after ``timeoutMinutes`` minutes at '`` sourceEndpoint ``'");
-                return Status.sourceCheServerNotAccessible;
+            value workspaces = listWorkspaces(sourceCheServer);
+            if (is Status workspaces) {
+                return workspaces;
             }
 
-            if (!exists responseContents) {
-                return Status.invalidJsonInWorkspaceList("<null>");
-            }
-            if (responseContents.empty) {
-                return Status.invalidJsonInWorkspaceList("");
-            }
-
-            log.debug(() => "    => `` responseContents ``");
-
-            try {
-                workspaces = parseJSON(responseContents);
-            } catch(Exception e) {
-                return Status.invalidJsonInWorkspaceList(responseContents);
-            }
-            if (! is JsonArray workspaces) {
-                return Status.invalidJsonInWorkspaceList(responseContents);
-            }
-
-            if (exists running = workspaces
-                .narrow<JsonObject>()
-                .find((workspace) => 
-                    if (exists status = workspace.getStringOrNull("status"))
-                    then status != "STOPPED"
-                    else false)) {
+            if (exists running = workspaces.find(not(isStopped))) {
                 return Status.workspacesShouldBeStopped(running.getStringOrNull("id") else "unknown");
             }
                 
             value initialState = [Status.success, []];
             value [status, createdWorkspaces] = workspaces
-                .narrow<JsonObject>()
-                .map((workspace) => workspace.get("config"))
-                .narrow<JsonObject>()
+                .map(getConfig)
                 .fold<[Status, [<String->String>*]]>(initialState)((currentState, toCreate) {
 
                 value [status, alreadyCreated] = currentState;
@@ -303,37 +217,14 @@ shared class MigrationTool(
             }
             status.migratedWorkspaces = JsonObject { *createdWorkspaces }.string;
             return status;
-        } catch(Exception e) {
+        }
+        catch(InvalidTypeException e) {
+            return Status.invalidJsonInWorkspaceList("<unknown>");
+        }
+        catch(Exception e) {
             value status = Status.unexpectedException(e);
             log.error(status.description, e);
             return status;
-        }
-    }
-
-    shared void rollbackCreatedWorkspace(<String->String> idAndName) {
-        value id->name = idAndName;
-
-        value endpoint = "``destinationCheServer``/workspace/``id``";
-        
-        try (response = send(Http().delete().url(endpoint))) {
-            switch(response.code())
-            case(204) {
-            }
-            case(403) {
-                log.warn("User doesn't have right to remove workspace `` name
-                        ``... This should never happen since the workspace was just created by this user");
-            }
-            case(409) {
-                log.warn("User cannot rollback the creation of workspace `` name 
-                        `` since it's already running... This should never happen since the workspace was just created by this user");
-            }
-            case(404) {
-                log.warn("User cannot rollback the creation of workspace `` name 
-                        `` since doesn't exist... This should never happen since the workspace was just created by this user");
-            }
-            else {
-                log.warn("User cannot rollback the creation of workspace `` name ``: unexpected error");
-            }
         }
     }
 }
