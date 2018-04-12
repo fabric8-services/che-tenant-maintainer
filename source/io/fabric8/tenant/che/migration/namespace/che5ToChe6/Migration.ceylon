@@ -277,7 +277,7 @@ shared class Migration(
             return null;
         }
 
-        value commandTimedOut = buildTimeout(60000);
+        value commandTimedOut = buildTimeout(180000);
         variable value status = terminated();
 
         while(! status exists) {
