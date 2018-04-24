@@ -6,7 +6,16 @@ set -x
 # Exit on error
 set -e
 
-REGISTRY=${REGISTRY:-"push.registry.devshift.net"}
+# TARGET variable gives ability to switch context for building rhel based images, default is "centos"
+# If CI slave is configured with TARGET="rhel" RHEL based images should be generated then.
+TARGET=${TARGET:-"centos"}
+if [ $TARGET == "rhel" ]; then
+  DOCKERFILE="Dockerfile.rhel"
+  REGISTRY=${DOCKER_REGISTRY:-"push.registry.devshift.net/osio-prod"}
+else
+  REGISTRY=${REGISTRY:-"push.registry.devshift.net"}
+  DOCKERFILE="Dockerfile"
+fi
 NAMESPACE=${NAMESPACE:-"fabric8-services"}
 
 # Source environment variables of the jenkins slave
@@ -30,7 +39,7 @@ function login() {
 }
 
  # We need to disable selinux for now, XXX
-/usr/sbin/setenforce 0
+/usr/sbin/setenforce 0 || true
 
 # Get all the deps in
 yum -y install \
