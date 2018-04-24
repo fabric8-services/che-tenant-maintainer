@@ -88,7 +88,7 @@ objects:
       app: che-tenant-maintainer
 parameters:
 - name: IMAGE
-  value: "registry.devshift.net/fabric8-services/fabric8-tenant-che-migration"
+  value: "prod.registry.devshift.net/osio-prod/fabric8-services/fabric8-tenant-che-migration"
 - name: IMAGE_TAG
   value: "latest"
 - description: Add DEBUG logs
