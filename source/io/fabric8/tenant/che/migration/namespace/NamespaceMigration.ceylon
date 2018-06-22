@@ -51,8 +51,9 @@ shared abstract class NamespaceMigration(
 
         "debug"
         option("debug-logs", 'v')
-        shared Boolean debugLogs = environment.debugLogs
-
+        shared Boolean debugLogs = environment.debugLogs,
+        
+        void configOverride(OpenShiftConfig conf) => noop()
         ) {
 
     value builder = OpenShiftConfigBuilder();
@@ -67,6 +68,7 @@ shared abstract class NamespaceMigration(
     }
 
     shared OpenShiftConfig osConfig = builder.build();
+    configOverride(osConfig);
 
     shared formal String name;
 

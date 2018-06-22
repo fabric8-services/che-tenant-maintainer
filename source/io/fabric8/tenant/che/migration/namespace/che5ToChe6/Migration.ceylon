@@ -53,6 +53,7 @@ shared Migration withDefaultValues() => Migration(
 
 "This utility will try to migrate the user's
  Che 5 workspaces into the new Che 6 server"
+migrationFinished
 shared class Migration(
 
         "Url of the Che 5 server that contains workspaces to migrate"
