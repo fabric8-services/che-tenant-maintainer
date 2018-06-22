@@ -70,8 +70,6 @@ shared abstract class NamespaceMigration(
     shared OpenShiftConfig osConfig = builder.build();
     configOverride(osConfig);
 
-    shared formal String name;
-
     shared restricted(`module`) String osioCheNamespace(OpenShiftClient oc) =>
             if (!osNamespace.empty) then osNamespace else (oc.namespace else "default");
 

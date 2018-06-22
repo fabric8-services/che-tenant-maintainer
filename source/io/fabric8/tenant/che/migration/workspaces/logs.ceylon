@@ -70,6 +70,8 @@ shared object logSettings {
         quiet = false;
         defaultPriority = priority;
     }
+    
+    shared void defaults() => noop();
 }
 
 shared Logger log = logger(`module`);

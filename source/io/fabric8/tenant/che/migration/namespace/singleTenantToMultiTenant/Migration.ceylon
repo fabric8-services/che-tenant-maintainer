@@ -45,12 +45,15 @@ shared Migration withDefaultValues() => Migration(
     environment.debugLogs
 );
 
+shared String name => Name.name;
+
 "This utility will try to fully migrate the current
  single-tenant OSIO namespace to multi-tenant Che
 
  This application should be deployed in the user OSIO
  Che namespace"
 migrationFinished
+named(`value name`)
 shared class Migration(
 
         "Url of the multi-tenant Che server that will receive migrated workspaces"
@@ -73,8 +76,6 @@ shared class Migration(
         Boolean debugLogs = false
 
         ) extends NamespaceMigration(identityId, requestId, jobRequestId, namespace, osToken, debugLogs) {
-
-    name = Name.name;
 
     value cheSingleTenantCheServerName="che";
     value cheSingleTenantCheServerRoute="che";

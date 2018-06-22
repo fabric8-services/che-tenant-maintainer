@@ -17,16 +17,12 @@ shared Migration? withDefaultValues<Migration>(Class<Migration,Nothing> migratio
             fun.openType == migration.declaration.openType
         )?.apply<Migration>()?.apply();
 
-shared [Class<NamespaceMigration,Nothing>*] migrationTypes = [
+shared Map<String, Class<NamespaceMigration,Nothing>> migrations = map {
     for (pkg in `module`.members.narrow<Package>())
         if (pkg.name != `module`.name)
-        for (cls in pkg.members<ClassDeclaration>())
-        if (exists extendedType = cls.extendedType,
-            extendedType.declaration == `NamespaceMigration`.declaration)
-        cls.classApply<NamespaceMigration>()
-];
-
-shared [String*] migrationNames => migrationTypes
-    .map(withDefaultValues).coalesced
-    .map(NamespaceMigration.name)
-    .sequence();
+        for (cls in pkg.annotatedMembers<ClassDeclaration, Named>())
+        if (exists name = cls.annotations<Named>().first?.naming,
+            exists type = cls.extendedType,
+            `class NamespaceMigration` == type.declaration)
+        name.apply<String, Nothing>().get() -> cls.classApply<NamespaceMigration>()
+};
