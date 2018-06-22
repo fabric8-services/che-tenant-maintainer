@@ -19,6 +19,9 @@ shared object environment {
     shared String? multiTenantCheServer = get("CHE_MULTITENANT_SERVER");
     shared String? cleanupSingleTenant = get("CLEANUP_SINGLE_TENANT");
     shared String? cheDestinationServer = get("CHE_DESTINATION_SERVER");
+    shared String? serviceAccountId = get("SERVICE_ACCOUNT_ID");
+    shared String? serviceAccountSecret = get("SERVICE_ACCOUNT_SECRET");
+    shared String? authApiUrl = get("AUTH_API_URL");
 }
 
 

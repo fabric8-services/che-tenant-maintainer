@@ -1,30 +1,30 @@
 import ceylon.file {
-    File,
-    parsePath,
-    Nil
+	File,
+	parsePath,
+	Nil
 }
 import ceylon.logging {
-    debug,
-    info
+	debug,
+	info
 }
 
 import fr.minibilles.cli {
-    option
+	option
 }
 
 import io.fabric8.openshift.client {
-    DefaultOpenShiftClient,
-    OpenShiftClient,
-    OpenShiftConfigBuilder,
-    OpenShiftConfig
+	DefaultOpenShiftClient,
+	OpenShiftClient,
+	OpenShiftConfigBuilder,
+	OpenShiftConfig
 }
 import io.fabric8.tenant.che.migration.workspaces {
-    logSettings,
-    log
+	logSettings,
+	log
 }
 
 import java.lang {
-    JavaString=String
+	JavaString=String
 }
 
 shared abstract class NamespaceMigration(
@@ -51,8 +51,9 @@ shared abstract class NamespaceMigration(
 
         "debug"
         option("debug-logs", 'v')
-        shared Boolean debugLogs = environment.debugLogs
-
+        shared Boolean debugLogs = environment.debugLogs,
+        
+        void configOverride(OpenShiftConfig conf) => noop()
         ) {
 
     value builder = OpenShiftConfigBuilder();
@@ -67,6 +68,7 @@ shared abstract class NamespaceMigration(
     }
 
     shared OpenShiftConfig osConfig = builder.build();
+    configOverride(osConfig);
 
     shared formal String name;
 
