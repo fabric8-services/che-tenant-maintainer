@@ -48,11 +48,6 @@ objects:
             value: 'http://f8osoproxy'
           - name: AB_JOLOKIA_AUTH_OPENSHIFT
             value: 'yes'
-          - name: AUTH_API_URL
-            valueFrom:
-              configMapKeyRef:
-                key: che-fabric8-multicluster-oso-proxy-url
-                name: rhche
           - name: SERVICE_ACCOUNT_ID
             valueFrom:
               secretKeyRef:

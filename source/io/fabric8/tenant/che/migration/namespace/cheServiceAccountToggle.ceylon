@@ -40,7 +40,7 @@ shared object cheServiceAccountTokenManager {
     value serviceAccountSecret = environment.serviceAccountSecret;
     
     "URL of the `fabric8_auth` service"
-    value authApiUrl = environment.authApiUrl else "http://auth:8089";
+    value authApiUrl = environment.authApiUrl else "http://auth/api";
     
     shared String? token;
     
