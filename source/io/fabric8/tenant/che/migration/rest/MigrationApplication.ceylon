@@ -9,7 +9,8 @@ import javax.ws.rs.core {
     MediaType
 }
 import io.fabric8.tenant.che.migration.namespace {
-    migrationNames
+    migrations,
+    MigrationFinished
 }
 
 applicationPath("/")
@@ -22,7 +23,7 @@ shared class MainEndpoint() {
     shared String help() =>
             "Fabric8 migration and maintenance tool for User Che tenants.
 
-             Available endpoints: `` ", ".join(migrationNames) ``
+             Available endpoints: `` ", ".join { for (name -> type in migrations) if (! type.declaration.annotated<MigrationFinished>()) name } ``
 
              For each endpoint, you can get help by requesting the './help' subpath.";
 }

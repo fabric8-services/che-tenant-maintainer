@@ -38,7 +38,6 @@ import io.fabric8.kubernetes.client {
     KubernetesClientException
 }
 
-
 shared Migration withDefaultValues() => Migration(
     environment.multiTenantCheServer else "",
     environment.cheDestinationServer else "",
@@ -51,9 +50,12 @@ shared Migration withDefaultValues() => Migration(
     environment.debugLogs
 );
 
+shared String name => Name.name;
+
 "This utility will try to migrate the user's
  Che 5 workspaces into the new Che 6 server"
 migrationFinished
+named (`value name`)
 shared class Migration(
 
         "Url of the Che 5 server that contains workspaces to migrate"
@@ -76,8 +78,6 @@ shared class Migration(
         Boolean debugLogs = environment.debugLogs
 
         ) extends NamespaceMigration(identityId, requestId, jobRequestId, osNamespace, osToken, debugLogs) {
-
-    name = Name.name;
 
     shared actual Status migrate() {
         try(oc = DefaultOpenShiftClient(osConfig)) {

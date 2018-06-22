@@ -57,6 +57,8 @@ shared Maintenance withDefaultValues() => Maintenance(
     environment.debugLogs
 );
 
+
+shared String name => Name.name;
 "
  This utility will clean the user workspace-dedicated
  persistent volume from workspace directories
@@ -66,6 +68,7 @@ shared Maintenance withDefaultValues() => Maintenance(
  of the user before cleaning workspace files, in order to fully
  cleanup the user Che tenant.
  "
+named(`value name`)
 shared class Maintenance(
     "
         API Url of the Che server that contains workspaces to clean.
@@ -113,9 +116,7 @@ shared class Maintenance(
             config.oauthToken = serviceAccountToken;
         }
     }) {
-    
-    name = Name.name;
-    
+
     function error(String message) {
         log.error(message);
         return Status(1, message);
