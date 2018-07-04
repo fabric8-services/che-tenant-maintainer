@@ -16,11 +16,20 @@ import io.fabric8.tenant.che.migration.namespace {
     Status,
     environment
 }
+import io.fabric8.tenant.che.migration.workspaces {
+    log
+}
+import java.lang {
+    Types {
+        classForType
+    }
+}
 
 path(Name.name)
 shared class Endpoint() extends MigrationEndpoint<Maintenance>() {
 
     endpointName => Name.name;
+    log.info(()=>"Starting endpoint: ``endpointName`` from class `` classForType<Endpoint>() ``");
 
     completeArguments(HttpHeaders headers) => super.completeArguments(headers).chain {
         if (exists cheServer = environment.cheDestinationServer)

@@ -8,10 +8,6 @@ import fr.minibilles.cli {
     cliHelp=help
 }
 
-import io.fabric8.tenant.che.migration.workspaces {
-    logSettings
-}
-
 import javax.ws.rs.core {
     context,
     UriInfo,
@@ -26,8 +22,6 @@ shared abstract class MigrationEndpoint<Migration>()
     value requestIdHeader = "X-Request-Id";
     value identityIdHeader = "X-Identity-Id";
     value namespaceHeader = "X-User-Namespace";
-
-    logSettings.format = logToJson(logIds.identity, logIds.request);
 
     shared formal String endpointName;
     value endpointDesc => "../``endpointName`` endpoint";

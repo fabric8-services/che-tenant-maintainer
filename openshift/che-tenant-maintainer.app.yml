@@ -34,6 +34,12 @@ objects:
                 key: debug
                 name: che-tenant-maintainer
                 optional: true
+          - name: COMMAND_TIMEOUT
+            valueFrom:
+              configMapKeyRef:
+                key: command-timeout
+                name: che-tenant-maintainer
+                optional: true
           - name: JOLOKIA_READ_WRITE
             valueFrom:
               configMapKeyRef:
@@ -48,6 +54,8 @@ objects:
             value: 'http://f8osoproxy'
           - name: AB_JOLOKIA_AUTH_OPENSHIFT
             value: 'yes'
+          - name: KEEP_ONLY_JSON_LOGS
+            value: 'true'
           - name: SERVICE_ACCOUNT_ID
             valueFrom:
               secretKeyRef:

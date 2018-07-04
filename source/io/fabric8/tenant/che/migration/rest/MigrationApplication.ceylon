@@ -10,14 +10,24 @@ import javax.ws.rs.core {
 }
 import io.fabric8.tenant.che.migration.namespace {
     migrations,
-    MigrationFinished
+    MigrationFinished,
+    logToJson,
+    logIds
+}
+import io.fabric8.tenant.che.migration.workspaces {
+    logSettings,
+    log
 }
 
 applicationPath("/")
-shared class MigrationApplication() extends Application() {}
+shared class MigrationApplication() extends Application() {
+    logSettings.format = logToJson(logIds.identity, logIds.request);
+    log.info(()=>"Registered Migration application at the following web context: '/'");
+}
 
 path("")
 shared class MainEndpoint() {
+
     get
     produces {MediaType.textPlain}
     shared String help() =>

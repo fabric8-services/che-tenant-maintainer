@@ -22,6 +22,10 @@ shared object environment {
     shared String? serviceAccountId = get("SERVICE_ACCOUNT_ID");
     shared String? serviceAccountSecret = get("SERVICE_ACCOUNT_SECRET");
     shared String? authApiUrl = get("AUTH_API_URL");
+    shared Integer commandTimeout =
+            switch(val = Integer.parse(get("COMMAND_TIMEOUT") else "600"))
+            case (is Integer) val
+            else 600;
 }
 
 

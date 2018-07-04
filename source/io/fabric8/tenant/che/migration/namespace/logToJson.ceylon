@@ -36,7 +36,7 @@ shared object logIds {
     }
 }
 
-String logToJson(String?() identityId, String?() requestId)(Priority p, String m, Throwable? t) {
+shared String logToJson(String?() identityId, String?() requestId)(Priority p, String m, Throwable? t) {
     variable String stacktrace = "";
     if (exists t) {
         printStackTrace(t, (st) { stacktrace += st; });

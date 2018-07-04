@@ -33,7 +33,8 @@ import io.jsonwebtoken {
 import java.lang {
     Thread {
         sleep
-    }
+    },
+    JavaBoolean = Boolean
 }
 import java.util {
     Arrays
@@ -49,6 +50,7 @@ shared Maintenance withDefaultValues() => Maintenance(
     environment.osioToken else "",
     false,
     false,
+    environment.commandTimeout,
     environment.identityId else "",
     environment.requestId else "",
     environment.jobRequestId else "",
@@ -96,6 +98,13 @@ shared class Maintenance(
         "
     option ("dry-run", 'z')
     shared Boolean dryRun = false,
+    "
+        Timeout to wait for the cleaning command completion (in seconds)
+        Default value is 10 minutes
+        "
+    option ("command-timeout", 'u')
+    shared Integer commandTimeout = environment.commandTimeout,
+
     String identityId = "",
     String requestId = "",
     String jobRequestId = "",
@@ -200,6 +209,10 @@ shared class Maintenance(
                     
                     workspaceIdsToKeep = {};
                 } else {
+                    value runningWorkspaces = workspaces.filter(not(isStopped)).map(getId);
+                    if (! runningWorkspaces.empty) {
+                        return error("Cleaning cannot be performed since the following workspaces are running in namespace '``namespace``': ``runningWorkspaces``");
+                    }
                     workspaceIdsToKeep = workspaces.map(getId);
                 }
                 
@@ -277,26 +290,25 @@ shared class Maintenance(
                         .build()
                 ]))
             .withCommand(
-            "/bin/bash",
-            "-c",
-            " ".join {
-                "eval 'set -e; for file in $(ls /pvroot); do",
-                "case $file in",
-                if (workspacesIdsToKeep.empty)
-                then ""
-                else "``"|".join(workspacesIdsToKeep)``) echo \"keeping $file\";;",
-                "*)",
-                if (dryRun)
-                then """echo "should remove ${file} (dry run)";;"""
-                else """echo "removing $file"; rm -Rf "/pvroot/$file";;""",
-                "esac;",
-                "done' 2> /dev/termination-log"
-            }
-        )
+                "/bin/bash",
+                "-c",
+                " ".join {
+                    "eval 'set -e; for file in $(ls /pvroot); do",
+                    "case $file in",
+                    if (workspacesIdsToKeep.empty)
+                    then ""
+                    else "``"|".join(workspacesIdsToKeep)``) echo \"keeping $file\";;",
+                    "*)",
+                    if (dryRun)
+                    then """echo "should remove ${file} (dry run)";;"""
+                    else """echo "removing $file"; rm -Rf "/pvroot/$file";;""",
+                    "esac;",
+                    "done' 2> /dev/termination-log"
+                })
             .endContainer()
             .endSpec()
             .done();
-        
+
         function terminated() {
             if (exists pod = oc.pods()
                     .withName(podName)
@@ -310,7 +322,7 @@ shared class Maintenance(
             return null;
         }
         
-        value commandTimedOut = buildTimeout(60000);
+        value commandTimedOut = buildTimeout(commandTimeout * 1000);
         variable value status = terminated();
         
         while (!status exists) {
@@ -320,7 +332,14 @@ shared class Maintenance(
             sleep(1000);
             status = terminated();
         }
-        
+
+        if (exists commandOutput = oc.pods()
+            .withName(podName)
+            .getLog(JavaBoolean.true)) {
+            log.info(() => "Command output:
+                            ``commandOutput``");
+        }
+
         if (exists terminationStatus = status) {
             return [
                 terminationStatus.exitCode.intValue(),
