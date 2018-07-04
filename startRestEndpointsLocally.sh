@@ -18,7 +18,7 @@ if [ "$JOLOKIA_READ_WRITE" != "true" ]; then
 fi
 
 if [ "$KEEP_ONLY_JSON_LOGS" == "true" ]; then
-    java $(get_java_options) -jar io.fabric8.tenant.che.migration.rest.jar | sed -re 's/^[^\{]+(\{.*\})$/\1/;/^.*[^\}]$/d'
+    exec java $(get_java_options) -jar io.fabric8.tenant.che.migration.rest.jar -Dswarm.logging.pattern-formatters.COLOR-PATTERN.pattern='%s%n' -Dswarm.logging.console-handlers.CONSOLE.named-formatter=COLOR-PATTERN -Dswarm.logging.loggers.[org.].level=ERROR
 else
     exec java $(get_java_options) -jar io.fabric8.tenant.che.migration.rest.jar
 fi

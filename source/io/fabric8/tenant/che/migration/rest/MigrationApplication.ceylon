@@ -18,10 +18,15 @@ import io.fabric8.tenant.che.migration.workspaces {
     logSettings,
     log
 }
+import org.jboss.logging {
+    Logger
+}
 
 applicationPath("/")
 shared class MigrationApplication() extends Application() {
+    value logger = Logger.getLogger("MigrationApplication");
     logSettings.format = logToJson(logIds.identity, logIds.request);
+    logSettings.appender = (String message) => logger.info(message);
     log.info(()=>"Registered Migration application at the following web context: '/'");
 }
 

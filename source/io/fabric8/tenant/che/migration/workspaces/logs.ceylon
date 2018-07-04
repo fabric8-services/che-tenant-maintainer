@@ -34,6 +34,7 @@ shared object logSettings {
     shared variable File? file = null;
     shared variable Boolean quiet = false;
     shared variable LogFormat format = simpleFromat;
+    shared variable Anything(String) appender = process.writeLine;
 
     value regexpsToObfuscate = [
         regex("""("[^"]*token":)"[^"]+"""", true ),
@@ -60,7 +61,7 @@ shared object logSettings {
                 }
             }
             if(!quiet) {
-                process.writeLine(format(p, toLog, t));
+                appender(format(p, toLog, t));
             }
         }            
     };
