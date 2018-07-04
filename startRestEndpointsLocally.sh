@@ -18,7 +18,7 @@ if [ "$JOLOKIA_READ_WRITE" != "true" ]; then
 fi
 
 if [ "$KEEP_ONLY_JSON_LOGS" == "true" ]; then
-    exec java $(get_java_options) -jar io.fabric8.tenant.che.migration.rest.jar | sed -re 's/^[^\{]+(\{.*\})$/\1/;/^.*[^\}]$/d'
+    java $(get_java_options) -jar io.fabric8.tenant.che.migration.rest.jar | sed -re 's/^[^\{]+(\{.*\})$/\1/;/^.*[^\}]$/d'
 else
     exec java $(get_java_options) -jar io.fabric8.tenant.che.migration.rest.jar
 fi
