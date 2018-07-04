@@ -42,9 +42,9 @@ shared String logToJson(String?() identityId, String?() requestId)(Priority p, S
         printStackTrace(t, (st) { stacktrace += st; });
     }
     return Object({
-        "time" -> systemTime.milliseconds(),
+        "date" -> systemTime.milliseconds(),
         "logger" -> "che-tenant-maintainer",
-        "msg" -> m,
+        "message" -> m,
         "level" -> p.string,
         if (! stacktrace.empty) then "stack_trace" -> stacktrace else null,
         if (exists id = identityId(), !id.empty) then "identity_id" -> id else null,
