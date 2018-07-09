@@ -51,6 +51,7 @@ shared Maintenance withDefaultValues() => Maintenance(
     false,
     false,
     environment.commandTimeout,
+    "",
     environment.identityId else "",
     environment.requestId else "",
     environment.jobRequestId else "",
@@ -104,6 +105,15 @@ shared class Maintenance(
         "
     option ("command-timeout", 'u')
     shared Integer commandTimeout = environment.commandTimeout,
+    "
+        Pipe-separated list of patterns for folders that should be kept,
+        in addition to the id of existing workspaces
+
+        Example: the `lost+found|workspace*` value would keep all the
+        folders that are equal to `lost+found` or start with `workspace`
+        "
+    option ("keep", 'k')
+    shared String keep = "",
 
     String identityId = "",
     String requestId = "",
@@ -269,7 +279,7 @@ shared class Maintenance(
                     .withClaimName(claimName)
                     .build())
                 .build();
-        
+
         suppressWarnings ("unusedDeclaration")
         value pod = oc
             .pods().createNew()
@@ -298,6 +308,9 @@ shared class Maintenance(
                     if (workspacesIdsToKeep.empty)
                     then ""
                     else "``"|".join(workspacesIdsToKeep)``) echo \"keeping $file\";;",
+                    if (keep.empty)
+                    then ""
+                    else "``keep``) echo \"skipping $file\";;",
                     "*)",
                     if (dryRun)
                     then """echo "should remove ${file} (dry run)";;"""
