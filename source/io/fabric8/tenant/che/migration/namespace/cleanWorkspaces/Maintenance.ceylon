@@ -227,11 +227,11 @@ shared class Maintenance(
                 }
                 
                 Status status;
-                value [code, stderr] = cleanWorkspaceFiles(oc, workspaceIdsToKeep);
+                value [code, stderr, details] = cleanWorkspaceFiles(oc, workspaceIdsToKeep);
                 if (exists code,
                     code == 0) {
                     log.info(() => "Workspace files correctly cleaned");
-                    status = Status(0, "");
+                    status = Status(0, "", details else "");
                 } else {
                     value detailedLog =
                         if (exists code)
@@ -241,7 +241,7 @@ shared class Maintenance(
                     String message = "Failure during cleaning of workspace files: ``detailedLog``";
                     log.error(" => ``message``");
                     
-                    status = Status(1, message, "");
+                    status = Status(1, message, details else "");
                 }
                 
                 if (status.code == 0) {
@@ -260,13 +260,13 @@ shared class Maintenance(
         }
     }
     
-    [Integer?, String?] cleanWorkspaceFiles(OpenShiftClient oc, {String*} workspacesIdsToKeep) {
+    [Integer?, String?, String?] cleanWorkspaceFiles(OpenShiftClient oc, {String*} workspacesIdsToKeep) {
         
         value podName = "workspace-data-cleaning-`` if (requestId.empty) then system.milliseconds / 1000 else requestId.replace("-", "") ``";
         value claimName = "claim-che-workspace";
         
         if (!oc.persistentVolumeClaims().withName(claimName).get() exists) {
-            return [null, "PVC ``claimName`` doesn't exist !"];
+            return [null, "PVC ``claimName`` doesn't exist !", null];
         }
         
         value volumeName = "for-maintenance";
@@ -313,7 +313,7 @@ shared class Maintenance(
                     else "``keep``) echo \"skipping $file\";;",
                     "*)",
                     if (dryRun)
-                    then """echo "should remove ${file} (dry run)";;"""
+                    then """echo "should remove $file";;"""
                     else """echo "removing $file"; rm -Rf "/pvroot/$file";;""",
                     "esac;",
                     "done' 2> /dev/termination-log"
@@ -346,17 +346,32 @@ shared class Maintenance(
             status = terminated();
         }
 
+        variable String? details = null;
         if (exists commandOutput = oc.pods()
             .withName(podName)
             .getLog(JavaBoolean.true)) {
-            log.info(() => "Command output:
-                            ``commandOutput``");
+
+            details = commandOutput.string;
+
+            {String *} logs;
+            if (commandOutput.length() <= 10000) {
+                logs = { "Command output:
+                              ``commandOutput``" };
+            } else {
+                logs = commandOutput.string
+                    .partition(10000)
+                    .indexed
+                    .map((index -> chars) => "Command output (part `` index + 1 ``):
+                                              `` String(chars) ``");
+            }
+            logs.each(log.info);
         }
 
         if (exists terminationStatus = status) {
             return [
                 terminationStatus.exitCode.intValue(),
-                terminationStatus.message of String?
+                terminationStatus.message of String?,
+                details
             ];
         } else {
             if (exists pendingPod = oc.pods()
@@ -367,7 +382,7 @@ shared class Maintenance(
                 oc.pods().withName(podName).delete();
             }
             
-            return [null, "Timeout while waiting for container creation or command execution"];
+            return [null, "Timeout while waiting for container creation or command execution", details];
         }
     }
 }
