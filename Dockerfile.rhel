@@ -1,4 +1,4 @@
-FROM prod.registry.devshift.net/osio-prod/base/jboss-jdk-8:latest
+FROM quay.io/openshiftio/rhel-base-jboss-jdk-8:latest
 
 ENV JAVA_HOME /etc/alternatives/jre
 ENV CHE_TENANT_MAINTAINER_HOME /opt/che-tenant-maintainer

@@ -106,7 +106,7 @@ objects:
       app: che-tenant-maintainer
 parameters:
 - name: IMAGE
-  value: "prod.registry.devshift.net/osio-prod/fabric8-services/fabric8-tenant-che-migration"
+  value: quay.io/openshiftio/rhel-fabric8-services-fabric8-tenant-che-migration
 - name: IMAGE_TAG
   value: "latest"
 - description: Add DEBUG logs
@@ -115,4 +115,3 @@ parameters:
 - description: The Java options to run the service with
   name: JAVA_OPTIONS
   value: ""
-  

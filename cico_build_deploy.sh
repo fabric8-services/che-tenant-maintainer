@@ -6,14 +6,15 @@ set -x
 # Exit on error
 set -e
 
+REGISTRY=${REGISTRY:-quay.io}
+
 # TARGET variable gives ability to switch context for building rhel based images, default is "centos"
 # If CI slave is configured with TARGET="rhel" RHEL based images should be generated then.
 TARGET=${TARGET:-"centos"}
+
 if [ $TARGET == "rhel" ]; then
   DOCKERFILE="Dockerfile.rhel"
-  REGISTRY=${DOCKER_REGISTRY:-"push.registry.devshift.net/osio-prod"}
 else
-  REGISTRY=${REGISTRY:-"push.registry.devshift.net"}
   DOCKERFILE="Dockerfile"
 fi
 NAMESPACE=${NAMESPACE:-"fabric8-services"}
@@ -21,12 +22,19 @@ NAMESPACE=${NAMESPACE:-"fabric8-services"}
 # Source environment variables of the jenkins slave
 # that might interest this worker.
 function load_jenkins_vars() {
-  if [ -e "jenkins-env" ]; then
-    cat jenkins-env \
-      | grep -E "(DEVSHIFT_TAG_LEN|DEVSHIFT_USERNAME|DEVSHIFT_PASSWORD|JENKINS_URL|GIT_BRANCH|GIT_COMMIT|BUILD_NUMBER|ghprbSourceBranch|ghprbActualCommit|BUILD_URL|ghprbPullId)=" \
-      | sed 's/^/export /g' \
-      > ~/.jenkins-env
-    source ~/.jenkins-env
+  if [ -e "jenkins-env.json" ]; then
+    eval "$(./env-toolkit load -f jenkins-env.json \
+            DEVSHIFT_TAG_LEN \
+            QUAY_USERNAME \
+            QUAY_PASSWORD \
+            JENKINS_URL \
+            GIT_BRANCH \
+            GIT_COMMIT \
+            BUILD_NUMBER \
+            ghprbSourceBranch \
+            ghprbActualCommit \
+            BUILD_URL \
+            ghprbPullId)"
   fi
 }
 

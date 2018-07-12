@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -e
 
-REGISTRY=${REGISTRY:-"docker.io"}
+REGISTRY=${REGISTRY:-"quay.io"}
 NAMESPACE=${NAMESPACE:-"dfestal"}
 ADD_REST_ENDPOINTS=${ADD_REST_ENDPOINTS:-false}
 DOCKERFILE=${DOCKERFILE:-"Dockerfile"}
@@ -19,9 +19,11 @@ else
   docker build -t f8tenant-che-migration-deploy -f ${DOCKERFILE} .
 fi
 
-
-if [ "$TAG" != "" ];
-then
-  tag_push ${REGISTRY}/${NAMESPACE}/fabric8-tenant-che-migration:$TAG
+if [[ "$TARGET" == "rhel" ]]; then
+    IMAGE=${REGISTRY}/rhel-${NAMESPACE}-fabric8-tenant-che-migration
+else
+    IMAGE=${REGISTRY}/${NAMESPACE}-fabric8-tenant-che-migration
 fi
-tag_push ${REGISTRY}/${NAMESPACE}/fabric8-tenant-che-migration:latest
+
+[ -n "$TAG" ] && tag_push ${IMAGE}:${TAG}
+tag_push ${IMAGE}:latest
