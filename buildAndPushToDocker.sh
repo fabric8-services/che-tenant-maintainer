@@ -20,9 +20,9 @@ else
 fi
 
 if [[ "$TARGET" == "rhel" ]]; then
-    IMAGE=${REGISTRY}/rhel-${NAMESPACE}-fabric8-tenant-che-migration
+    IMAGE=${REGISTRY}/openshiftio/rhel-${NAMESPACE}-fabric8-tenant-che-migration
 else
-    IMAGE=${REGISTRY}/${NAMESPACE}-fabric8-tenant-che-migration
+    IMAGE=${REGISTRY}/openshiftio/${NAMESPACE}-fabric8-tenant-che-migration
 fi
 
 [ -n "$TAG" ] && tag_push ${IMAGE}:${TAG}
