@@ -61,7 +61,7 @@ objects:
                 key: osio-token
                 name: migration
                 optional: true
-          - name: MIGRATION
+          - name: MAINTENANCE
             valueFrom:
               configMapKeyRef:
                 key: migration

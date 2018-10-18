@@ -20,6 +20,12 @@ import okhttp3 {
     Request,
     OkHttpClient
 }
+import io.jsonwebtoken {
+    Jwts
+}
+import io.fabric8.openshift.client {
+    OpenShiftConfig
+}
 
 shared object cheServiceAccountTokenManager {
     
@@ -75,4 +81,19 @@ shared object cheServiceAccountTokenManager {
     
     shared Boolean useCheServiceAccountToken(String userId) =>
         unleash.isEnabled("che.serviceaccount.lockdown", contextBuilder().userId(userId).build());
+    
+    shared void overrideConfig(String identityId, String keycloakToken)(OpenShiftConfig config) {
+        value userId =
+                if (!identityId.empty)
+        then identityId
+        else Jwts.parser().parseClaimsJwt(keycloakToken[0 .. (keycloakToken.lastInclusion(".") else 0)]).body.subject;
+        
+        if (exists serviceAccountToken = cheServiceAccountTokenManager.token,
+            cheServiceAccountTokenManager.useCheServiceAccountToken(userId)) {
+            
+            log.debug(() => "Using Che SA token for ``userId``");
+            config.requestConfig.impersonateUsername = userId;
+            config.oauthToken = serviceAccountToken;
+        }
+    }
 }

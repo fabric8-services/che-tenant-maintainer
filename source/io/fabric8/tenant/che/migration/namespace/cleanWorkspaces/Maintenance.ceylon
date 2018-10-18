@@ -23,11 +23,8 @@ import io.fabric8.tenant.che.migration.namespace {
 }
 import io.fabric8.tenant.che.migration.workspaces {
     log,
-    WorkspaceTool=Tool,
+    WorkspaceTool,
     WorkspaceStatus=Status
-}
-import io.jsonwebtoken {
-    Jwts
 }
 
 import java.lang {
@@ -38,11 +35,6 @@ import java.lang {
 }
 import java.util {
     Arrays
-}
-
-Boolean() buildTimeout(Integer timeout) {
-    value end = system.milliseconds + timeout;
-    return () => system.milliseconds > end;
 }
 
 shared Maintenance withDefaultValues() => Maintenance(
@@ -56,7 +48,8 @@ shared Maintenance withDefaultValues() => Maintenance(
     environment.requestId else "",
     environment.jobRequestId else "",
     environment.osNamespace else "",
-    environment.osToken else "",
+    environment.osMasterUrl else "",
+    environment.osToken else environment.osioToken else "",
     environment.debugLogs
 );
 
@@ -78,17 +71,17 @@ shared class Maintenance(
        
         For example: `https://che.openshift.io/api`
         "
-    option ("che-server", 's')
+    option ("che-server")
     shared String cheServer,
     "
         Keycloak (OSIO) token of the user that will be migrated
         "
-    option ("token", 't')
+    option ("token")
     shared String keycloakToken,
     "
         Also stop and delete the existing workspaces before cleaning workspace directories
         "
-    option ("delete-all-workspaces", 'd')
+    option ("delete-all-workspaces")
     shared Boolean deleteAllWorkspaces = false,
     "
         Only simulate the cleaning but don't apply it
@@ -97,13 +90,13 @@ shared class Maintenance(
         option, the running workspaces will still be stopped,
         but not deleted.
         "
-    option ("dry-run", 'z')
+    option ("dry-run")
     shared Boolean dryRun = false,
     "
         Timeout to wait for the cleaning command completion (in seconds)
         Default value is 10 minutes
         "
-    option ("command-timeout", 'u')
+    option ("command-timeout")
     shared Integer commandTimeout = environment.commandTimeout,
     "
         Pipe-separated list of patterns for folders that should be kept,
@@ -112,36 +105,31 @@ shared class Maintenance(
         Example: the `lost+found|workspace*` value would keep all the
         folders that are equal to `lost+found` or start with `workspace`
         "
-    option ("keep", 'k')
+    option ("keep")
     shared String keep = "",
 
     String identityId = "",
     String requestId = "",
     String jobRequestId = "",
     String osNamespace = environment.osNamespace else "",
+    String osMasterUrl = environment.osMasterUrl else "",
     String osToken = environment.osToken else keycloakToken,
-    Boolean debugLogs = environment.debugLogs) extends NamespaceMigration(identityId, requestId, jobRequestId, osNamespace, osToken, debugLogs, (config) {
-        
-        value userId =
-            if (!identityId.empty)
-            then identityId
-            else Jwts.parser().parseClaimsJwt(keycloakToken[0 .. (keycloakToken.lastInclusion(".") else 0)]).body.subject;
-        
-        if (exists serviceAccountToken = cheServiceAccountTokenManager.token,
-            cheServiceAccountTokenManager.useCheServiceAccountToken(userId)) {
-            
-            log.debug(() => "Using Che SA token for ``userId``");
-            config.requestConfig.impersonateUsername = userId;
-            config.oauthToken = serviceAccountToken;
-        }
-    }) {
+    Boolean debugLogs = environment.debugLogs) extends NamespaceMaintenance(
+        identityId, 
+        requestId, 
+        jobRequestId, 
+        osNamespace,
+        osMasterUrl,
+        osToken, 
+        debugLogs, 
+        cheServiceAccountTokenManager.overrideConfig(identityId, keycloakToken)) {
 
     function error(String message) {
         log.error(message);
         return Status(1, message);
     }
     
-    shared actual Status migrate() {
+    shared actual Status proceed() {
         value workspaceTool = WorkspaceTool(keycloakToken);
         value listWorkspaces = curry(workspaceTool.listWorkspaces)(cheServer);
         value getWorkspace = curry(workspaceTool.getWorkspace)(cheServer);

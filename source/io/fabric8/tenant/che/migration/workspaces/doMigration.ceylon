@@ -11,7 +11,7 @@ import ceylon.file {
     Nil
 }
 
-"Runs the migration from either command line or the REST endpoint"
+"Runs the workspace move from either command line or the REST endpoint"
 shared [Status, MigrationTool=] doMigration([String*]|String argumentsOrJson) {
     logSettings.reset();
 

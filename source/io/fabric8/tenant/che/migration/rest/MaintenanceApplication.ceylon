@@ -9,8 +9,8 @@ import javax.ws.rs.core {
     MediaType
 }
 import io.fabric8.tenant.che.migration.namespace {
-    migrations,
-    MigrationFinished,
+    maintenances,
+    MaintenanceFinished,
     logToJson,
     logIds
 }
@@ -23,11 +23,11 @@ import org.jboss.logging {
 }
 
 applicationPath("/")
-shared class MigrationApplication() extends Application() {
-    value logger = Logger.getLogger("MigrationApplication");
+shared class MaintenanceApplication() extends Application() {
+    value logger = Logger.getLogger("MaintenanceApplication");
     logSettings.format = logToJson(logIds.identity, logIds.request);
     logSettings.appender = (String message) => logger.info(message);
-    log.info(()=>"Registered Migration application at the following web context: '/'");
+    log.info(()=>"Registered Maintenance application at the following web context: '/'");
 }
 
 path("")
@@ -36,9 +36,9 @@ shared class MainEndpoint() {
     get
     produces {MediaType.textPlain}
     shared String help() =>
-            "Fabric8 migration and maintenance tool for User Che tenants.
+            "Fabric8 maintenance tool for User Che tenants.
 
-             Available endpoints: `` ", ".join { for (name -> type in migrations) if (! type.declaration.annotated<MigrationFinished>()) name } ``
+             Available endpoints: `` ", ".join { for (name -> type in maintenances) if (! type.declaration.annotated<MaintenanceFinished>()) name } ``
 
              For each endpoint, you can get help by requesting the './help' subpath.";
 }

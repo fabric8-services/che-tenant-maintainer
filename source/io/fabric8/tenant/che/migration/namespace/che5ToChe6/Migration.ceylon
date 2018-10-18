@@ -46,6 +46,7 @@ shared Migration withDefaultValues() => Migration(
     environment.requestId else "",
     environment.jobRequestId else "",
     environment.osNamespace else "",
+    environment.osMasterUrl else "",
     environment.osToken else "",
     environment.debugLogs
 );
@@ -54,7 +55,7 @@ shared String name => Name.name;
 
 "This utility will try to migrate the user's
  Che 5 workspaces into the new Che 6 server"
-migrationFinished
+maintenanceFinished
 named (`value name`)
 shared class Migration(
 
@@ -74,12 +75,13 @@ shared class Migration(
         String requestId = "",
         String jobRequestId = "",
         String osNamespace = environment.osNamespace else "",
+        String osMasterUrl = environment.osMasterUrl else "",
         String osToken = environment.osToken else keycloakToken,
         Boolean debugLogs = environment.debugLogs
 
-        ) extends NamespaceMigration(identityId, requestId, jobRequestId, osNamespace, osToken, debugLogs) {
+        ) extends NamespaceMaintenance(identityId, requestId, jobRequestId, osNamespace, osMasterUrl, osToken, debugLogs) {
 
-    shared actual Status migrate() {
+    shared actual Status proceed() {
         try(oc = DefaultOpenShiftClient(osConfig)) {
             value namespace = osioCheNamespace(oc);
 

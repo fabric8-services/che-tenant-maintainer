@@ -5,7 +5,7 @@ shared object environment {
             if (exists var=process.environmentVariableValue(name),
                 ! var.empty) then var else null;
 
-    shared String? migration = get("MIGRATION");
+    shared String? maintenance = get("MAINTENANCE");
     shared String? requestId = get("REQUEST_ID");
     shared String? identityId = get("IDENTITY_ID");
     shared String? jobRequestId = get("JOB_REQUEST_ID");

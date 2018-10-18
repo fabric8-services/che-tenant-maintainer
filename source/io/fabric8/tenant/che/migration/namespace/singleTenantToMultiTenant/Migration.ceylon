@@ -41,6 +41,7 @@ shared Migration withDefaultValues() => Migration(
     environment.requestId else "",
     environment.jobRequestId else "",
     environment.osNamespace else "",
+    environment.osMasterUrl else "",
     environment.osToken else "",
     environment.debugLogs
 );
@@ -52,7 +53,7 @@ shared String name => Name.name;
 
  This application should be deployed in the user OSIO
  Che namespace"
-migrationFinished
+maintenanceFinished
 named(`value name`)
 shared class Migration(
 
@@ -72,15 +73,16 @@ shared class Migration(
         String requestId = "",
         String jobRequestId = "",
         String namespace = environment.osNamespace else "",
+        String osMasterUrl = environment.osMasterUrl else "",
         String osToken = environment.osToken else "",
         Boolean debugLogs = false
 
-        ) extends NamespaceMigration(identityId, requestId, jobRequestId, namespace, osToken, debugLogs) {
+        ) extends NamespaceMaintenance(identityId, requestId, jobRequestId, namespace, osMasterUrl, osToken, debugLogs) {
 
     value cheSingleTenantCheServerName="che";
     value cheSingleTenantCheServerRoute="che";
 
-    shared actual Status migrate() {
+    shared actual Status proceed() {
         value keycloakToken = environment.osioToken;
         String singleTenantCheServer;
 
