@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<launchConfiguration type="com.redhat.ceylon.eclipse.ui.launching.ceylonJavaModule">
+<booleanAttribute key="CEYLON_LAUNCH_VERBOSE" value="false"/>
+<stringAttribute key="CEYLON_MODULE" value="io.fabric8.tenant.che.migration.namespace/1.0.0"/>
+<stringAttribute key="CEYLON_TOPLEVEL" value="io.fabric8.tenant.che.migration.namespace.runAsSimpleProcess"/>
+<listAttribute key="org.eclipse.debug.core.MAPPED_RESOURCE_PATHS">
+<listEntry value="/che-tenant-maintainer"/>
+</listAttribute>
+<listAttribute key="org.eclipse.debug.core.MAPPED_RESOURCE_TYPES">
+<listEntry value="4"/>
+</listAttribute>
+<mapAttribute key="org.eclipse.debug.core.environmentVariables">
+<mapEntry key="MAINTENANCE" value="cleanWorkspaces"/>
+</mapAttribute>
+<stringAttribute key="org.eclipse.jdt.launching.PROGRAM_ARGUMENTS" value="--che-server &quot;.../api&quot; --os-master-url &quot;&quot; --dry-run  --os-namespace &quot;...-che&quot; --request-id dummy-request-id --identity-id dummy-identity-id --keep 'workspace*' --token &quot;...&quot;"/>
+<stringAttribute key="org.eclipse.jdt.launching.PROJECT_ATTR" value="che-tenant-maintainer"/>
+</launchConfiguration>
