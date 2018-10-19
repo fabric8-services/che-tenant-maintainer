@@ -21,7 +21,7 @@ import java.lang {
     Thread
 }
 
-shared class Tool(shared default String keycloakToken) {
+shared class WorkspaceTool(shared default String keycloakToken) {
     value httpClient = OkHttpClient.Builder()
         .connectTimeout(30, TimeUnit.seconds)
         .readTimeout(30, TimeUnit.seconds)

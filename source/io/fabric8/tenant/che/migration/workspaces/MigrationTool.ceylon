@@ -106,7 +106,7 @@ shared class MigrationTool(
            - `/"agents"(:\[[^]]+)\]/"installers"$1,"new-installer"]/`
        """
     shared [String*] replace = []
-) extends Tool(keycloakToken) {
+) extends WorkspaceTool(keycloakToken) {
     function buildRegexp(variable String param) {
         variable Boolean global = false;
         value sepChar = param.first;

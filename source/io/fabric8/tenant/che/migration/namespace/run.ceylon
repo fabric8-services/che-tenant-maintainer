@@ -16,27 +16,27 @@ import java.nio.file {
 suppressWarnings("expressionTypeNothing")
 shared void run() {
     logSettings.defaults();
-    value requestedMigration = environment.migration;
+    value requestedMaintenance = environment.maintenance;
     
-    value migration = if (exists requestedMigration)
-    then migrations[requestedMigration]
+    value maintenance = if (exists requestedMaintenance)
+    then maintenances[requestedMaintenance]
     else null;
     
-    if (! exists migration) {
+    if (! exists maintenance) {
         logSettings.reset();
-        log.error("MIGRATION environment variable should exist and have one of the following values: ``
-        ",".join { for (name -> type in migrations) if (! type.declaration.annotated<MigrationFinished>()) name } ``");
+        log.error("MAINTENANCE environment variable should exist and have one of the following values: ``
+        ",".join { for (name -> type in maintenances) if (! type.declaration.annotated<MaintenanceFinished>()) name } ``");
         writeTerminationStatus(1);
         process.exit(1);
         return;
     }
 
-    assert(exists requestedMigration);
+    assert(exists requestedMaintenance);
     
-    value migrationInstance = withDefaultValues(migration);
+    value migrationInstance = withDefaultValues(maintenance);
     if (!exists migrationInstance) {
         logSettings.reset();
-        log.error("The action `` requestedMigration `` cannot be instanciated with default values");
+        log.error("The action `` requestedMaintenance `` cannot be instanciated with default values");
         writeTerminationStatus(1);
         process.exit(1);
         return;

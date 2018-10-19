@@ -12,13 +12,13 @@ import javax.ws.rs.core {
     HttpHeaders
 }
 import io.fabric8.tenant.che.migration.namespace {
-    MigrationEndpoint,
+    MaintenanceEndpoint,
     Status
 }
 
 
 path(Name.name)
-shared class Endpoint() extends MigrationEndpoint<Migration>() {
+shared class Endpoint() extends MaintenanceEndpoint<Migration>() {
 
     endpointName = Name.name;
 

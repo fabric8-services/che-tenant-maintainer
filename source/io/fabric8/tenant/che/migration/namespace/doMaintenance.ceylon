@@ -19,13 +19,13 @@ import ceylon.logging {
     info
 }
 
-Status doMigration<Migration>(String programName, [String*]|JsonObject argumentsOrJson)
-    given Migration satisfies NamespaceMigration {
+Status doMaintenance<Migration>(String programName, [String*]|JsonObject argumentsOrJson)
+    given Migration satisfies NamespaceMaintenance {
 
     logSettings.reset(environment.debugLogs then debug else info);
 
     System.setProperty("kubernetes.auth.tryKubeConfig", "true");
-    log.debug(() => "Applying migration '`` programName ``' with the following parameters: `` argumentsOrJson ``");
+    log.debug(() => "Applying maintenance action '`` programName ``' with the following parameters: `` argumentsOrJson ``");
     try {
         value parsingResult = switch (argumentsOrJson)
         case (is JsonObject) parseJson<Migration>(argumentsOrJson.string)
@@ -37,7 +37,7 @@ Status doMigration<Migration>(String programName, [String*]|JsonObject arguments
         }
         case (is Migration) {
             value migrator = parsingResult;
-            return migrator.migrate();
+            return migrator.proceed();
         }
         else {
             value errors = parsingResult;

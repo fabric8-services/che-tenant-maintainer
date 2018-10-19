@@ -1,5 +1,5 @@
 import io.fabric8.tenant.che.migration.namespace {
-    MigrationEndpoint,
+    MaintenanceEndpoint,
     Status,
     environment
 }
@@ -19,7 +19,7 @@ import javax.ws.rs.core {
 }
 
 path(Name.name)
-shared class Endpoint() extends MigrationEndpoint<Maintenance>() {
+shared class Endpoint() extends MaintenanceEndpoint<Maintenance>() {
 
     endpointName => Name.name;
 

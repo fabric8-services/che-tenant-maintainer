@@ -16,8 +16,8 @@ import javax.ws.rs.core {
     }
 }
 
-shared abstract class MigrationEndpoint<Migration>()
-        given Migration satisfies NamespaceMigration {
+shared abstract class MaintenanceEndpoint<Maintenance>()
+        given Maintenance satisfies NamespaceMaintenance {
     value bearerPrefix = "Bearer ";
     value requestIdHeader = "X-Request-Id";
     value identityIdHeader = "X-Identity-Id";
@@ -60,10 +60,10 @@ shared abstract class MigrationEndpoint<Migration>()
         then parsed else JsonObject {};
 
     shared default Status post(context HttpHeaders headers, String json) => logIds.resetAfter(()=>
-         doMigration<Migration> (endpointDesc, overrideJson(headers,parse(json))));
+         doMaintenance<Maintenance> (endpointDesc, overrideJson(headers,parse(json))));
 
     shared default Status get(context HttpHeaders headers, context UriInfo info) => logIds.resetAfter(()=>
-        doMigration<Migration> (endpointDesc,
+        doMaintenance<Maintenance> (endpointDesc,
         overrideJson(headers,JsonObject {
             for (param in info.getQueryParameters(true).entrySet())
             (param.key.string ->
@@ -81,5 +81,5 @@ shared abstract class MigrationEndpoint<Migration>()
                     else null ))
         })));
 
-    shared default String help() => cliHelp<Migration>(endpointDesc);
+    shared default String help() => cliHelp<Maintenance>(endpointDesc);
 }
