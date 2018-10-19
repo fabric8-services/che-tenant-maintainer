@@ -83,17 +83,21 @@ shared object cheServiceAccountTokenManager {
         unleash.isEnabled("che.serviceaccount.lockdown", contextBuilder().userId(userId).build());
     
     shared void overrideConfig(String identityId, String keycloakToken)(OpenShiftConfig config) {
-        value userId =
-                if (!identityId.empty)
-        then identityId
-        else Jwts.parser().parseClaimsJwt(keycloakToken[0 .. (keycloakToken.lastInclusion(".") else 0)]).body.subject;
-        
-        if (exists serviceAccountToken = cheServiceAccountTokenManager.token,
-            cheServiceAccountTokenManager.useCheServiceAccountToken(userId)) {
+        if (exists serviceAccountToken = token) {
+            value userId =
+                    if (!identityId.empty)
+            then identityId
+            else if (! keycloakToken.empty)
+            then Jwts.parser().parseClaimsJwt(keycloakToken[0 .. (keycloakToken.lastInclusion(".") else 0)]).body.subject
+            else null;
             
-            log.debug(() => "Using Che SA token for ``userId``");
-            config.requestConfig.impersonateUsername = userId;
-            config.oauthToken = serviceAccountToken;
+            if (exists userId,
+                cheServiceAccountTokenManager.useCheServiceAccountToken(userId)) {
+                
+                log.debug(() => "Using Che SA token for user ``userId``");
+                config.requestConfig.impersonateUsername = userId;
+                config.oauthToken = serviceAccountToken;
+            }
         }
     }
 }
