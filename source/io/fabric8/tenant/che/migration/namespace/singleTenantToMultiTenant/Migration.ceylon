@@ -98,28 +98,9 @@ shared class Migration(
         try(oc = DefaultOpenShiftClient(osConfig)) {
             value namespace = osioCheNamespace(oc);
 
-            value lockResources = oc.configMaps().inNamespace(namespace).withName("migration-lock");
-            if(lockResources.get() exists) {
-                log.info("A previous migration Job is already running. Waiting for it to finish...");
-            }
-
-            variable value timeoutMinutes = 10;
-            for(retry in 0:timeoutMinutes*60) {
-                if(! lockResources.get() exists) {
-                    try {
-                        if (lockResources.createNew().withNewMetadata().withName("migration-lock").endMetadata().done() exists) {
-                            break;
-                        }
-                    } catch(Exception e) {
-                        log.warn("Exception when trying to create the lock config map", e);
-                    }
-                }
-                Thread.sleep(1000);
-            } else {
-                value message = "The migration lock is still owned, even after a ``timeoutMinutes`` minutes in namespace '`` namespace ``'
-                                 It might be necessary to remove the 'migration-lock' config map manually.";
-                log.error(message);
-                return Status(1, message);
+            value lockResources = getLockResource(namespace);
+            if (is Status lockResources) {
+                return lockResources;
             }
 
             try {
@@ -154,7 +135,7 @@ shared class Migration(
 
                 if (!podReady) {
                     log.info("Starting the single-tenant Che server...");
-                    timeoutMinutes = 5;
+                    value timeoutMinutes = 5;
                     for(retry in 0:timeoutMinutes*60) {
                         if(podReady) {
                             break;

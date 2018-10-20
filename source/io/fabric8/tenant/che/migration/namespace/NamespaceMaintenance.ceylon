@@ -24,7 +24,17 @@ import io.fabric8.tenant.che.migration.workspaces {
 }
 
 import java.lang {
-    JavaString=String
+    JavaString=String,
+    Thread {
+        sleep
+    }
+}
+import io.fabric8.kubernetes.api.model {
+    ConfigMap,
+    DoneableConfigMap
+}
+import io.fabric8.kubernetes.client {
+    KubernetesClientException
 }
 
 shared abstract class NamespaceMaintenance(
@@ -128,6 +138,46 @@ shared abstract class NamespaceMaintenance(
             }
         } catch(Exception e) {
             log.warn("Exception while cleaning the Openshift resources", e);
+        }
+    }
+
+    "
+     Get *lock* on specified namespace, in the form of a configMap. Used to ensure multiple
+     maintenance jobs cannot be run sumultaneously.
+
+     Waits for a specified timeout before failing.
+     "
+    shared KubernetesResource<ConfigMap,DoneableConfigMap>|Status
+    getLockResource(String namespace, Integer timeoutMinutes=10, String lockConfigMap="maintenance-lock") {
+        try (oc = DefaultOpenShiftClient(osConfig)) {
+            value lockResources = oc.configMaps().inNamespace(namespace).withName(lockConfigMap);
+            if (lockResources.get() exists) {
+                log.info("A previous maintenance Job is already running. Waiting for it to finish...");
+            }
+            for (retry in 0 : timeoutMinutes*60) {
+                if (!lockResources.get() exists) {
+                    try {
+                        if (lockResources.createNew().withNewMetadata().withName(lockConfigMap).endMetadata().done() exists) {
+                            break;
+                        }
+                    } catch (Exception e) {
+                        if (is KubernetesClientException e,
+                            exists reason = e.status.reason,
+                            reason == "AlreadyExists") {
+                            log.debug("Lock config map already exists. Waiting for it to be released");
+                        } else {
+                            log.warn("Exception when trying to create the lock config map", e);
+                        }
+                    }
+                }
+                sleep(1000);
+            } else {
+                value message = "The maintenance lock is still owned, even after a ``timeoutMinutes`` minutes in namespace '``namespace``'
+                                             It might be necessary to remove the 'maintenance-lock' config map manually.";
+                log.error(message);
+                return Status(1, message);
+            }
+            return lockResources;
         }
     }
 }
