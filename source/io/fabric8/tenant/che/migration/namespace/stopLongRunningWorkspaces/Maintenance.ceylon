@@ -6,9 +6,11 @@ import ceylon.time {
     Instant,
     systemTime
 }
+
 import fr.minibilles.cli {
     option
 }
+
 import io.fabric8.kubernetes.api.model {
     DoneableConfigMap,
     ConfigMap
@@ -108,16 +110,24 @@ shared class Maintenance(
                     () => "Found long running workspaces:
                            ``workspacesToStop.map((w) => w.getObjectOrNull("config")?.getStringOrNull("name"))``");
 
+                Status status;
                 if (!dryRun) {
-                    workspacesToStop.each(stopWorkspace);
+                    value result = workspacesToStop.fold(true)((res, workspace) => res && stopWorkspace(workspace));
+                    if (result) {
+                        status = Status(0, "Successfully stopped long-running workspaces: '
+                                            ``workspacesToStop.map((w) => w.getObjectOrNull("id"))``'");
+                    } else {
+                        status = Status(1, "Failed to stop some long-running workspaces");
+                    }
                 } else {
                     log.info("Is dry run, doing nothing.");
+                    status = Status(0, "Dry run.");
                 }
+                return status;
             } finally {
                 lockResources.delete();
             }
         }
-        return Status(1);
     }
 
     Boolean isRunningFor(Integer hours, JsonObject workspace) {
