@@ -9,10 +9,9 @@ import fr.minibilles.cli {
 import io.fabric8.kubernetes.api.model {
     PersistentVolumeClaimVolumeSourceBuilder,
     VolumeBuilder,
-    VolumeMountBuilder
-}
-import io.fabric8.kubernetes.client {
-    KubernetesClientException
+    VolumeMountBuilder,
+    ConfigMap,
+    DoneableConfigMap
 }
 import io.fabric8.openshift.client {
     DefaultOpenShiftClient,
@@ -141,33 +140,9 @@ shared class Maintenance(
         try (oc = DefaultOpenShiftClient(osConfig)) {
             value namespace = osioCheNamespace(oc);
             
-            value lockConfigMap = "maintenance-lock";
-            value lockResources = oc.configMaps().inNamespace(namespace).withName(lockConfigMap);
-            if (lockResources.get() exists) {
-                log.info("A previous maintenance Job is already running. Waiting for it to finish...");
-            }
-            
-            value timeoutMinutes = 10;
-            for (retry in 0 : timeoutMinutes*60) {
-                if (!lockResources.get() exists) {
-                    try {
-                        if (lockResources.createNew().withNewMetadata().withName(lockConfigMap).endMetadata().done() exists) {
-                            break;
-                        }
-                    } catch (Exception e) {
-                        if (is KubernetesClientException e,
-                            exists reason = e.status.reason,
-                            reason == "AlreadyExists") {
-                            log.debug("Lock config map already exists. Waiting for it to be released");
-                        } else {
-                            log.warn("Exception when trying to create the lock config map", e);
-                        }
-                    }
-                }
-                sleep(1000);
-            } else {
-                return error("The maintenance lock is still owned, even after a ``timeoutMinutes`` minutes in namespace '``namespace``'
-                                             It might be necessary to remove the 'maintenance-lock' config map manually.");
+            KubernetesResource<ConfigMap,DoneableConfigMap>|Status lockResources = getLockResource(namespace);
+            if (is Status lockResources) {
+                return lockResources;
             }
             
             try {
