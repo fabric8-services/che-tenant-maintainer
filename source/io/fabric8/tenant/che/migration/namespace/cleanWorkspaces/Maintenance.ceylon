@@ -30,7 +30,7 @@ import java.lang {
     Thread {
         sleep
     },
-    JavaBoolean = Boolean
+    JavaBoolean=Boolean
 }
 import java.util {
     Arrays
@@ -67,7 +67,7 @@ named(`value name`)
 shared class Maintenance(
     "
         API Url of the Che server that contains workspaces to clean.
-       
+
         For example: `https://che.openshift.io/api`
         "
     option ("che-server")
@@ -84,7 +84,7 @@ shared class Maintenance(
     shared Boolean deleteAllWorkspaces = false,
     "
         Only simulate the cleaning but don't apply it
-       
+
         Note that when compined with the `delete-all-workspaces`
         option, the running workspaces will still be stopped,
         but not deleted.
@@ -114,20 +114,20 @@ shared class Maintenance(
     String osMasterUrl = environment.osMasterUrl else "",
     String osToken = environment.osToken else keycloakToken,
     Boolean debugLogs = environment.debugLogs) extends NamespaceMaintenance(
-        identityId, 
-        requestId, 
-        jobRequestId, 
+        identityId,
+        requestId,
+        jobRequestId,
         osNamespace,
         osMasterUrl,
-        osToken, 
-        debugLogs, 
+        osToken,
+        debugLogs,
         cheServiceAccountTokenManager.overrideConfig(identityId, keycloakToken)) {
 
     function error(String message) {
         log.error(message);
         return Status(1, message);
     }
-    
+
     shared actual Status proceed() {
         value workspaceTool = WorkspaceTool(keycloakToken);
         value listWorkspaces = curry(workspaceTool.listWorkspaces)(cheServer);
@@ -136,34 +136,36 @@ shared class Maintenance(
         value isStopped = workspaceTool.isStopped;
         value stopWorkspace = curry(workspaceTool.stopWorkspace)(cheServer);
         value deleteWorkspace = curry(workspaceTool.deleteWorkspace)(cheServer);
-        
+
         try (oc = DefaultOpenShiftClient(osConfig)) {
             value namespace = osioCheNamespace(oc);
-            
+
             KubernetesResource<ConfigMap,DoneableConfigMap>|Status lockResources = getLockResource(namespace);
             if (is Status lockResources) {
                 return lockResources;
             }
-            
+
             try {
                 value workspaces = listWorkspaces();
                 if (is WorkspaceStatus workspaces) {
                     return Status(1, workspaces.string);
                 }
-                
+
                 {String*} workspaceIdsToKeep;
                 if (deleteAllWorkspaces) {
                     for (wksp in workspaces) {
                         value id = getId(wksp);
                         if (!isStopped(wksp)) {
-                            if (!stopWorkspace(wksp)) {
-                                return error("The workspace ``id`` could not be stopped in namespace '``namespace``'");
+                            value [success, message] = stopWorkspace(wksp);
+                            if (!success) {
+                                return error("The workspace ``id`` could not be stopped in namespace '``namespace``'.
+                                              Message: ``message``");
                             }
                             value timeoutSeconds = 30;
                             value stopTimedOut = buildTimeout(timeoutSeconds * 1000);
                             value hasStopped =>
                                 if (is JsonObject w = getWorkspace(id)) then isStopped(w) else false;
-                            
+
                             while (!hasStopped) {
                                 if (stopTimedOut()) {
                                     return error("The workspace ``id`` cannot be stopped, even after a ``timeoutSeconds`` seconds in namespace '``namespace``'");
@@ -179,7 +181,7 @@ shared class Maintenance(
                             return error("The workspace ``id`` could not be deleted in namespace '``namespace``'");
                         }
                     }
-                    
+
                     workspaceIdsToKeep = {};
                 } else {
                     value runningWorkspaces = workspaces.filter(not(isStopped)).map(getId);
@@ -188,7 +190,7 @@ shared class Maintenance(
                     }
                     workspaceIdsToKeep = workspaces.map(getId);
                 }
-                
+
                 Status status;
                 value [code, stderr, details] = cleanWorkspaceFiles(oc, workspaceIdsToKeep);
                 if (exists code,
@@ -200,13 +202,13 @@ shared class Maintenance(
                         if (exists code)
                         then "Command failed with the following code: ``code`` and termination message: `` stderr else "" ``"
                         else (stderr else "");
-                    
+
                     String message = "Failure during cleaning of workspace files: ``detailedLog``";
                     log.error(" => ``message``");
-                    
+
                     status = Status(1, message, details else "");
                 }
-                
+
                 if (status.code == 0) {
                     log.info(status.message);
                 } else {
@@ -222,18 +224,18 @@ shared class Maintenance(
             }
         }
     }
-    
+
     [Integer?, String?, String?] cleanWorkspaceFiles(OpenShiftClient oc, {String*} workspacesIdsToKeep) {
-        
+
         value podName = "workspace-data-cleaning-`` if (requestId.empty) then system.milliseconds / 1000 else requestId.replace("-", "") ``";
         value claimName = "claim-che-workspace";
-        
+
         if (!oc.persistentVolumeClaims().withName(claimName).get() exists) {
             return [null, "PVC ``claimName`` doesn't exist !", null];
         }
-        
+
         value volumeName = "for-maintenance";
-        
+
         value volume =
             VolumeBuilder()
                 .withName(volumeName)
@@ -297,10 +299,10 @@ shared class Maintenance(
             }
             return null;
         }
-        
+
         value commandTimedOut = buildTimeout(commandTimeout * 1000);
         variable value status = terminated();
-        
+
         while (!status exists) {
             if (commandTimedOut()) {
                 break;
@@ -344,7 +346,7 @@ shared class Maintenance(
                 phase == "Pending") {
                 oc.pods().withName(podName).delete();
             }
-            
+
             return [null, "Timeout while waiting for container creation or command execution", details];
         }
     }
