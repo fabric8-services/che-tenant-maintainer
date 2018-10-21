@@ -100,11 +100,17 @@ shared class Maintenance(
                     return Status(1, workspaces.string);
                 }
                 log.debug(
-                    () => "Cleaning long-running workspaces for namespace: ``namespace``.\n
-                           Found running workspaces:
+                    () => "Cleaning long-running workspaces for namespace: ``namespace``.
+                           Found workspaces in namespace:
                            ``workspaces.map((w) => w.getObjectOrNull("config")?.getStringOrNull("name"))``");
 
+                // Get workspaces running for longer than maxAge
                 value workspacesToStop = workspaces.filter(not(isStopped)).filter(curry(isRunningFor)(maxAge));
+
+                if (workspacesToStop.size == 0) {
+                    log.info("Found no long-running workspaces");
+                    return Status(0, "No long-running workspaces found to stop");
+                }
 
                 log.info(
                     () => "Found long running workspaces:
@@ -112,12 +118,21 @@ shared class Maintenance(
 
                 Status status;
                 if (!dryRun) {
-                    value result = workspacesToStop.fold(true)((res, workspace) => res && stopWorkspace(workspace));
-                    if (result) {
-                        status = Status(0, "Successfully stopped long-running workspaces: '
-                                            ``workspacesToStop.map((w) => w.getObjectOrNull("id"))``'");
+                    // Call stopWorkspace on each workspace, mapping the result to the error message or null in
+                    // case of success.
+                    value errors = workspacesToStop.map(
+                        (workspace) {
+                            value [success, message] = stopWorkspace(workspace);
+                            return !success then message;
+                        }
+                    ).coalesced;
+
+                    if (errors.size == 0) {
+                        status = Status(0,
+                                        "Successfully stopped long-running workspaces",
+                                        "``workspacesToStop.map((w) => w.getStringOrNull("id"))``");
                     } else {
-                        status = Status(1, "Failed to stop some long-running workspaces");
+                        status = Status(1, "Failed to stop some long-running workspaces.", "``errors``");
                     }
                 } else {
                     log.info("Is dry run, doing nothing.");
@@ -141,12 +156,12 @@ shared class Maintenance(
         }
 
         value startTime = Instant(startTimeMillis);
-        value maxDuration = Period().withHours(hours);
+        value maxDuration = Period().withMinutes(hours);
         value currentTime = systemTime.instant();
         log.debug(
-            () => "Checking workspace '``workspace.getObjectOrNull("config")?.getStringOrNull("name") else "null"``'\n
-                   Start time:              ``startTime``\n
-                   Current time:            ``currentTime``\n
+            () => "Checking workspace '``workspace.getObjectOrNull("config")?.getStringOrNull("name") else "null"``'
+                   Start time:              ``startTime``
+                   Current time:            ``currentTime``
                    Start time plus timeout: ``startTime.plus(maxDuration)``
                    Result: stop workspace = ``startTime.plus(maxDuration) < currentTime``");
         return startTime.plus(maxDuration) < currentTime;
