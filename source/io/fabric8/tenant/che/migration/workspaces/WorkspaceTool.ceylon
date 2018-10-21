@@ -1,24 +1,30 @@
-import java.util.concurrent {
-    TimeUnit
-}
-import okhttp3 {
-    Request { Http = Builder },
-    OkHttpClient,
-    RequestBody,
-    MediaType { contentType = parse },
-    Response
-}
 import ceylon.json {
     JsonArray,
     parseJSON=parse,
     JsonValue=Value,
     JsonObject
 }
+
+import java.lang {
+    Thread
+}
 import java.net {
     SocketTimeoutException
 }
-import java.lang {
-    Thread
+import java.util.concurrent {
+    TimeUnit
+}
+
+import okhttp3 {
+    Request {
+        Http=Builder
+    },
+    OkHttpClient,
+    RequestBody,
+    MediaType {
+        contentType=parse
+    },
+    Response
 }
 
 shared class WorkspaceTool(shared default String keycloakToken) {
@@ -83,7 +89,7 @@ shared class WorkspaceTool(shared default String keycloakToken) {
             return Status.invalidJsonInWorkspaceList("");
         }
 
-        log.debug(() => "    => `` responseContents ``");
+        //log.debug(() => "    => `` responseContents ``");
 
         try {
             workspaces = parseJSON(responseContents);
@@ -177,7 +183,7 @@ shared class WorkspaceTool(shared default String keycloakToken) {
         }
     }
 
-    shared Boolean stopWorkspace(String apiEndpoint, JsonObject|<String->String?> workspace) {
+    shared [Boolean, String] stopWorkspace(String apiEndpoint, JsonObject|<String->String?> workspace) {
         value id->name = switch(workspace) case (is JsonObject) idAndName(workspace) else workspace;
 
         value endpoint = "``workspaceEndpoint(apiEndpoint)``/``id``/runtime";
@@ -185,19 +191,22 @@ shared class WorkspaceTool(shared default String keycloakToken) {
         try (response = delete(endpoint)) {
             switch (response.code())
             case (204) {
-                return true;
+                return [true, "success"];
             }
             case (403) {
-                log.warn("User doesn't have right to stop workspace ``name else id``");
-                return false;
+                value message = "User doesn't have right to stop workspace ``name else id``";
+                log.warn(message);
+                return [false, message];
             }
             case (404) {
-                log.warn("User cannot stop workspace ``name else id`` since it doesn't exist");
-                return false;
+                value message = "User cannot stop workspace ``name else id`` since it doesn't exist";
+                log.warn(message);
+                return [false, message];
             }
             else {
-                log.warn("User cannot stop workspace ``name else id``: unexpected error");
-                return false;
+                value message = "User cannot stop workspace ``name else id``: unexpected error";
+                log.warn(message);
+                return [false, message];
             }
         }
     }
