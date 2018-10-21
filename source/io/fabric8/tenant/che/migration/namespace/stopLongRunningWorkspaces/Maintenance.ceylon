@@ -61,6 +61,11 @@ shared class Maintenance(
      "
     option("max-age")
     shared Integer maxAge = 12,
+    "
+     Use minutes instead of hours for calculating max age of workspaces.
+     Useful for debugging."
+    option("use-minutes")
+    shared Boolean useMinutes = false,
 
     String identityId = "",
     String requestId = "",
@@ -156,7 +161,13 @@ shared class Maintenance(
         }
 
         value startTime = Instant(startTimeMillis);
-        value maxDuration = Period().withMinutes(hours);
+        Period maxDuration;
+        if (useMinutes) {
+            // Primarily for debugging, to avoid waiting an hour to test workspace stop.
+            maxDuration = Period().withMinutes(hours);
+        } else {
+            maxDuration = Period().withHours(hours);
+        }
         value currentTime = systemTime.instant();
         log.debug(
             () => "Checking workspace '``workspace.getObjectOrNull("config")?.getStringOrNull("name") else "null"``'
