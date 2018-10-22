@@ -34,33 +34,33 @@ shared class Maintenance(
     "
      API Url of the Che server that contains workspaces to clean.
 
-     For example: `https://che.openshift.io/api`
-     "
+     For example: `https://che.openshift.io/api`"
     option ("che-server")
     shared String cheServer,
+
     "
-     Keycloak (OSIO) token of the user that will be migrated
-     "
+     Keycloak (OSIO) token of the user that will be migrated"
     option ("token")
     shared String keycloakToken,
+
     "
      Timeout to wait for the cleaning command completion (in seconds)
-     Default value is 10 minutes
-     "
+     Default value is 10 minutes"
     option ("command-timeout")
     shared Integer commandTimeout = environment.commandTimeout,
+
     "
-     Dry run of stop workspaces task
-     "
+     Dry run of stop workspaces task"
     option("dry-run")
     shared Boolean dryRun = false,
+
     "
      Max age, in hours, of running workspaces. Workspaces running for
      longer are stopped.
-     Default value is 12 hours
-     "
+     Default value is 12 hours"
     option("max-age")
     shared Integer maxAge = 12,
+
     "
      Use minutes instead of hours for calculating max age of workspaces.
      Useful for debugging."
@@ -110,9 +110,14 @@ shared class Maintenance(
                            ``workspaces.map((w) => w.getObjectOrNull("config")?.getStringOrNull("name"))``");
 
                 // Get workspaces running for longer than maxAge
-                value workspacesToStop = workspaces.filter(not(isStopped)).filter(curry(isRunningFor)(maxAge));
+                value workspacesToStop = workspaces.filter {
+                    selecting = and {
+                        p = not(isStopped);
+                        q = curry(isRunningFor)(maxAge);
+                    };
+                }.sequence();
 
-                if (workspacesToStop.size == 0) {
+                if (workspacesToStop.empty) {
                     log.info("Found no long-running workspaces");
                     return Status(0, "No long-running workspaces found to stop");
                 }
@@ -132,7 +137,7 @@ shared class Maintenance(
                         }
                     ).coalesced;
 
-                    if (errors.size == 0) {
+                    if (errors.empty) {
                         status = Status(0,
                                         "Successfully stopped long-running workspaces",
                                         "``workspacesToStop.map((w) => w.getStringOrNull("id"))``");
@@ -141,7 +146,7 @@ shared class Maintenance(
                     }
                 } else {
                     log.info("Is dry run, doing nothing.");
-                    status = Status(0, "Dry run.");
+                    status = Status(0, "Dry run.", "Would have stopped: ``workspacesToStop.map((w) => w.getStringOrNull("id"))``");
                 }
                 return status;
             } finally {
