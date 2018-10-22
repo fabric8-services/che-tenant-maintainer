@@ -66,44 +66,42 @@ shared String name => Name.name;
 named(`value name`)
 shared class Maintenance(
     "
-        API Url of the Che server that contains workspaces to clean.
+     API Url of the Che server that contains workspaces to clean.
 
-        For example: `https://che.openshift.io/api`
-        "
+     For example: `https://che.openshift.io/api`"
     option ("che-server")
     shared String cheServer,
+
     "
-        Keycloak (OSIO) token of the user that will be migrated
-        "
+     Keycloak (OSIO) token of the user that will be migrated"
     option ("token")
     shared String keycloakToken,
+
     "
-        Also stop and delete the existing workspaces before cleaning workspace directories
-        "
+     Also stop and delete the existing workspaces before cleaning workspace directories"
     option ("delete-all-workspaces")
     shared Boolean deleteAllWorkspaces = false,
-    "
-        Only simulate the cleaning but don't apply it
 
-        Note that when compined with the `delete-all-workspaces`
-        option, the running workspaces will still be stopped,
-        but not deleted.
-        "
+    "
+     Only simulate the cleaning but don't apply it
+
+     Note that when compined with the `delete-all-workspaces` option,
+     the running workspaces will still be stopped, but not deleted."
     option ("dry-run")
     shared Boolean dryRun = false,
+
     "
-        Timeout to wait for the cleaning command completion (in seconds)
-        Default value is 10 minutes
-        "
+     Timeout to wait for the cleaning command completion (in seconds)
+     Default value is 10 minutes"
     option ("command-timeout")
     shared Integer commandTimeout = environment.commandTimeout,
-    "
-        Pipe-separated list of patterns for folders that should be kept,
-        in addition to the id of existing workspaces
 
-        Example: the `lost+found|workspace*` value would keep all the
-        folders that are equal to `lost+found` or start with `workspace`
-        "
+    "
+     Pipe-separated list of patterns for folders that should be kept,
+     in addition to the id of existing workspaces
+
+     Example: the `lost+found|workspace*` value would keep all the
+     folders that are equal to `lost+found` or start with `workspace`"
     option ("keep")
     shared String keep = "",
 
