@@ -84,8 +84,10 @@ objects:
             name: jolokia
           resources:
             limits:
+              cpu: 400m
               memory: 1200Mi
             requests:
+              cpu: 1m
               memory: 512Mi
         terminationGracePeriodSeconds: 60
     triggers:
